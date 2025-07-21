@@ -1,4 +1,4 @@
-import { BaseMicrogame } from '../components/MacroGame';
+import { BaseMicrogame } from '../components/BaseMicrogame';
 
 // The class now extends BaseMicrogame to ensure it has the required methods.
 export default class AvoidGame extends BaseMicrogame {

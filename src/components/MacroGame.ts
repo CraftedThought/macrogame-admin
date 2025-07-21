@@ -1,30 +1,8 @@
 import { PreviewConfig } from '../data/mock-config';
 import { Microgame } from '../types';
-// We'll assume a microgame registry will be created at this path
 import { microgames } from '../microgames';
-
-// --- TYPE DEFINITIONS ---
-
-// Defines the expected structure for a microgame's result
-interface MicrogameResult {
-    win: boolean;
-}
-
-// A base class for all microgames to ensure they have a consistent structure
-export abstract class BaseMicrogame {
-    protected gameArea: HTMLElement;
-    protected onEnd: (result: MicrogameResult) => void;
-    protected skinConfig: any; // Can be typed more strictly later
-
-    constructor(gameArea: HTMLElement, onEnd: (result: MicrogameResult) => void, skinConfig: any) {
-        this.gameArea = gameArea;
-        this.onEnd = onEnd;
-        this.skinConfig = skinConfig;
-    }
-
-    abstract start(): void;
-    abstract cleanup(): void;
-}
+// Import BaseMicrogame from its new, separate file
+import { BaseMicrogame, MicrogameResult } from './BaseMicrogame';
 
 // --- CORE GAME LOGIC ---
 
@@ -44,7 +22,6 @@ export class MacroGame {
         this.gameArea = gameArea;
         this.config = config;
         
-        // Filter out any undefined games that might result from .find()
         this.microGames = this.config.macrogame.flow.filter((g): g is Microgame => !!g);
 
         this.bgAudio = new Audio('/sounds/background.wav');
@@ -69,7 +46,7 @@ export class MacroGame {
 
     private showIntroScreen(): Promise<void> {
         return new Promise((resolve) => {
-            this.gameArea.innerHTML = ''; // Clear previous content
+            this.gameArea.innerHTML = '';
             const introDiv = document.createElement('div');
             introDiv.style.cssText = `text-align: center; color: black; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: center; background: #4a5c42; font-family: 'Press Start 2P', cursive;`;
             
@@ -162,7 +139,7 @@ export class MacroGame {
     private async onGameEnd(result: MicrogameResult): Promise<void> {
         if (result.win) {
             this.successAudio.play();
-            this.points += 100; // Example point value
+            this.points += 100;
         } else {
             this.loseAudio.play();
         }
@@ -182,7 +159,7 @@ export class MacroGame {
     }
 
     private showEndScreen(): void {
-        this.gameArea.innerHTML = ''; // Clear the game area
+        this.gameArea.innerHTML = '';
     
         const endScreen = document.createElement("div");
         endScreen.style.cssText = `width: 100%; height: 100%; padding: 20px; display: flex; flex-direction: column; font-family: 'Press Start 2P', cursive; overflow: hidden; background: #2c3e50; color: white; box-sizing: border-box;`;
@@ -275,7 +252,7 @@ export class MacroGame {
             this.showRedemptionMessage(`Redeemed: ${coupon.name}!`);
           
             this.selectedCouponEl = null;
-            this.buildRewardsList(); // Re-render rewards to update affordability
+            this.buildRewardsList();
             const redeemBtn = this.gameArea.querySelector<HTMLButtonElement>('#redeem-button');
             if (redeemBtn) {
                 redeemBtn.disabled = true;
