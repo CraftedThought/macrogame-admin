@@ -1,45 +1,78 @@
-import { BaseMicrogame } from '../components/BaseMicrogame';
+// A file to hold all of our custom types
 
-// --- Import all microgame classes ---
-import AvoidGame from './avoid';
-import CatchGame from './catch';
-import CleanGame from './clean';
-import CollectGame from './collect';
-import ConsumeGame from './consume';
-import DanceGame from './dance';
-import DressGame from './dress';
-import EscapeGame from './escape';
-import MakeupGame from './makeup';
-import ClawGame from './claw';
-
-// --- Placeholder for unimplemented games ---
-class PlaceholderGame extends BaseMicrogame {
-    private timer: NodeJS.Timeout | null = null;
-
-    start() {
-        this.gameArea.innerHTML = `<div style="color: white; display: flex; justify-content: center; align-items: center; height: 100%; font-size: 1.5rem; padding: 1rem; text-align: center;">This game is not yet implemented.</div>`;
-        this.timer = setTimeout(() => {
-            this.onGameEnd({ win: true });
-        }, 3000);
-    }
-
-    cleanup() {
-        if (this.timer) {
-            clearTimeout(this.timer);
+export interface Microgame {
+    id: string;
+    name: string;
+    baseType: string;
+    controls: string;
+    length: number; // in seconds
+    skins: {
+        [category: string]: {
+            description: string;
+            visuals: string;
+            sfx: string;
         }
     }
 }
 
-// --- Microgame Registry ---
-export const microgames: { [key: string]: typeof BaseMicrogame } = {
-  'avoid_v1': AvoidGame,
-  'catch_v1': CatchGame,
-  'escape_v1': EscapeGame,
-  'clean_v1': CleanGame,
-  'collect_v1': CollectGame,
-  'consume_v1': ConsumeGame,
-  'dance_v1': DanceGame,
-  'dress_up_v1': DressGame,
-  'makeup_v1': MakeupGame,
-  'claw_v1': ClawGame,
-};
+export interface Macrogame {
+    id:string;
+    name: string;
+    category: string;
+    createdAt: string;
+    config: {
+        introScreenText: string;
+        introScreenDuration: number; // in ms
+        titleScreenDuration: number; // in ms
+        controlsScreenDuration: number; // in ms
+        backgroundMusicUrl: string | null;
+    };
+    flow: { microgameId: string; order: number }[];
+    rewards: { rewardId: string; name: string; pointsCost: number }[];
+}
+
+export interface Reward {
+    id: string;
+    name: string;
+    type: 'percentage_discount' | 'fixed_discount' | 'free_shipping' | 'free_gift' | 'loyalty_points';
+    value: string;
+    codeType: 'single' | 'unique';
+    createdAt: string;
+    redemptions: number;
+    conversionRate: number;
+}
+
+export interface Popup {
+    id: string;
+    name:string;
+    macrogameId: string;
+    macrogameName: string;
+    status: 'Draft' | 'Active';
+    views: number;
+    engagements: number;
+    createdAt: string;
+    skinId?: string;
+}
+
+// UPDATED: Added exitButton details to the UISkin definition.
+export interface UISkin {
+    id: string;
+    name: string;
+    category: 'Gaming' | 'General';
+    type: 'Retro' | 'Modern' | 'All';
+    imageUrl: string;
+    fontFamily: string;
+    fontUrl?: string;
+    gameArea: {
+        top: number;
+        left: number;
+        width: number;
+        height: number;
+    };
+    exitButton: {
+        top: number; // pixels from container top
+        right: number; // pixels from container right
+        width: number;
+        height: number;
+    };
+}
