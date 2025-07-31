@@ -1,11 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import PreviewPlayer from './components/PreviewPlayer'; // Corrected import path
-import './index.css';
+import PreviewHost from './PreviewHost';
+import './index.css'; // Optional: for global styles if needed
 
-// The '!' tells TypeScript we are certain that the element exists.
-ReactDOM.createRoot(document.getElementById('root')!).render(
+// Create a root div for React to mount into
+const rootElement = document.createElement('div');
+rootElement.id = 'react-root';
+document.body.appendChild(rootElement);
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <PreviewPlayer />
-  </React.StrictMode>,
+    <PreviewHost />
+  </React.StrictMode>
 );

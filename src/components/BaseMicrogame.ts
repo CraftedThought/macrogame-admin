@@ -5,6 +5,11 @@ export interface MicrogameResult {
     win: boolean;
 }
 
+// Defines the shape of a microgame class constructor
+export interface MicrogameConstructor {
+    new (gameArea: HTMLElement, onEnd: (result: MicrogameResult) => void, skinConfig: any): BaseMicrogame;
+}
+
 // A base class for all microgames to ensure they have a consistent structure
 export abstract class BaseMicrogame {
     protected gameArea: HTMLElement;

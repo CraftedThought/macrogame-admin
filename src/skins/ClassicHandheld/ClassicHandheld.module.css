@@ -1,0 +1,70 @@
+.container {
+  position: relative;
+  width: 675px;
+  height: 526px;
+  background-color: #BCBDC2;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 7px;
+  border-bottom-left-radius: 7px;
+  border-bottom-right-radius: 75px;
+  box-shadow:
+    inset 6px 6px 4px 0 rgba(255, 255, 255, 0.25),
+    inset -6px -6px 4px 0 rgba(0, 0, 0, 0.06);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.gameArea {
+  position: absolute;
+  width: 545px;
+  height: 268px;
+  z-index: 2; /* Sits below the frame */
+  overflow: hidden;
+  background-color: black; /* This was missing */
+}
+
+.screenTrimFrame {
+  position: absolute;
+  width: 625px;
+  height: 298px;
+  z-index: 3; /* Sits on top of the game area */
+  pointer-events: none; /* Allows clicks to pass through to the game */
+}
+
+/* Decorative SVGs - Absolutely Positioned */
+.accents, .dpad, .selectStart, .baButtons {
+  position: absolute;
+  z-index: 1; /* Places all background SVGs on the bottom layer */
+  pointer-events: none;
+}
+
+.accents {
+  width: 674px;
+  height: 53px;
+  top: 0;
+  right: 0;
+}
+
+.dpad {
+  width: 108px;
+  height: 108px;
+  left: 35px;
+  top: calc(50% + 268px / 2 + 30px - 108px);
+}
+
+.selectStart {
+  width: 95px;
+  height: 27px;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(50% + 268px / 2 + 103px - 27px);
+}
+
+.baButtons {
+  width: 128px;
+  height: 120px;
+  right: 31px;
+  top: calc(50% + 268px / 2 + 30px - 120px);
+}
