@@ -1,35 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { microgames } from '../microgames';
-import { BaseMicrogame, MicrogameResult } from '../components/BaseMicrogame';
-import { Macrogame, Reward, Microgame as MicrogameData } from '../types';
+import { Macrogame, Reward, Microgame as MicrogameData, MicrogameResult } from '../types';
 
 const WIN_SOUND_SRC = '/sounds/success.wav';
 const LOSE_SOUND_SRC = '/sounds/lose.wav';
 
-export const useMacroGameEngine = (
-  gameAreaRef: React.RefObject<HTMLDivElement>,
-  macrogame?: Macrogame,
-  allRewards?: Reward[]
-) => {
+export const useMacroGameEngine = (macrogame?: Macrogame, allRewards?: Reward[]) => {
   const [view, setView] = useState<'loading' | 'intro' | 'title' | 'controls' | 'game' | 'result' | 'end'>('loading');
   const [points, setPoints] = useState(0);
   const [activeGameData, setActiveGameData] = useState<MicrogameData | null>(null);
   const [result, setResult] = useState<MicrogameResult | null>(null);
+  const [isMuted, setIsMuted] = useState(false); // Add muted state
   
-  const activeGameRef = useRef<BaseMicrogame | null>(null);
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
   const gameIndexRef = useRef(0);
 
   const onGameEnd = useCallback((gameResult: MicrogameResult) => {
-    // First, clean up the microgame's internal logic (e.g., timers)
-    activeGameRef.current?.cleanup();
-    activeGameRef.current = null;
-    
-    // CRITICAL FIX: Manually clear the DOM managed by the microgame class
-    if (gameAreaRef.current) {
-        gameAreaRef.current.innerHTML = '';
-    }
-
     setResult(gameResult);
 
     if (gameResult.win) {
@@ -40,8 +25,8 @@ export const useMacroGameEngine = (
     }
     
     gameIndexRef.current++;
-    setView('result'); // Now, let React take over rendering again
-  }, [gameAreaRef]);
+    setView('result');
+  }, []);
 
   const runFlow = useCallback(async () => {
     if (!macrogame) return;
@@ -63,22 +48,7 @@ export const useMacroGameEngine = (
     await new Promise(resolve => setTimeout(resolve, macrogame.config.controlsScreenDuration));
     
     setView('game');
-
-    setTimeout(() => {
-        const GameClass = microgames[gameData.id];
-        if (GameClass && gameAreaRef.current) {
-            gameAreaRef.current.innerHTML = '';
-            const gameInstance = new GameClass(gameAreaRef.current, onGameEnd, {});
-            activeGameRef.current = gameInstance;
-            gameInstance.start();
-        } else {
-            console.error(`Game class for ${gameData.id} not found or gameAreaRef is not available.`);
-            gameIndexRef.current++;
-            runFlow();
-        }
-    }, 50);
-
-  }, [macrogame, gameAreaRef, onGameEnd]);
+  }, [macrogame]);
 
   useEffect(() => {
     if (view === 'result') {
@@ -88,6 +58,19 @@ export const useMacroGameEngine = (
       return () => clearTimeout(timer);
     }
   }, [view, runFlow]);
+  
+  // Sync the isMuted state with the audio element
+  useEffect(() => {
+      const bgAudio = audioRef.current.bg;
+      if (bgAudio) {
+          bgAudio.muted = isMuted;
+      }
+  }, [isMuted]);
+
+  // Function to toggle mute state
+  const toggleMute = useCallback(() => {
+      setIsMuted(prev => !prev);
+  }, []);
 
   const start = useCallback(async () => {
     if (!macrogame) return;
@@ -109,5 +92,6 @@ export const useMacroGameEngine = (
     runFlow();
   }, [macrogame, runFlow]);
 
-  return { view, points, result, activeGameData, macrogame, allRewards, start };
+  // Return the new mute controls
+  return { view, points, result, activeGameData, macrogame, allRewards, start, onGameEnd, isMuted, toggleMute };
 };

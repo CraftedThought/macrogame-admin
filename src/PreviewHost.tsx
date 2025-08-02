@@ -1,57 +1,24 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Popup, Macrogame, Reward, UISkin, Microgame, MicrogameResult } from './types';
+import { Popup, Macrogame, Reward, UISkin, Microgame as MicrogameData, MicrogameResult } from './types';
 import { useMacroGameEngine } from './hooks/useMacroGameEngine';
+import { microgames } from './microgames';
+
+// Import all skin components
 import ClassicHandheldSkin from './skins/ClassicHandheld';
+import ModernHandheldSkin from './skins/ModernHandheld';
+import WhiteTabletSkin from './skins/WhiteTablet';
 
-// --- Legacy PngSkin Component ---
-// This component is now fully responsible for its own layout.
-const LegacyPngSkin: React.FC<{ skin: UISkin, children: React.ReactNode, gameAreaRef: React.RefObject<HTMLDivElement> }> = ({ skin, children, gameAreaRef }) => {
-  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
-
-  useEffect(() => {
-    const img = new Image();
-    img.src = skin.imageUrl;
-    img.onload = () => setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => setDimensions({ width: 600, height: 500 }); 
-  }, [skin.imageUrl]);
-
-  if (!dimensions) return null; 
-
-  const containerStyle: React.CSSProperties = {
-    position: 'relative',
-    width: `${dimensions.width}px`,
-    height: `${dimensions.height}px`,
-    backgroundImage: `url(${skin.imageUrl})`,
-    backgroundSize: '100% 100%',
-  };
-  
-  const gameAreaStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: `${skin.gameArea.top}px`,
-    left: `${skin.gameArea.left}px`,
-    width: `${skin.gameArea.width}px`,
-    height: `${skin.gameArea.height}px`,
-    overflow: 'hidden',
-    background: 'black'
-  };
-
-  return (
-    <div style={containerStyle}>
-      <div ref={gameAreaRef} style={gameAreaStyle}>{children}</div>
-    </div>
-  );
+// The registry with corrected keys
+const skinRegistry: { [key: string]: React.FC<any> } = {
+  'classic-handheld': ClassicHandheldSkin,
+  'modern-handheld': ModernHandheldSkin,
+  'white-tablet': WhiteTabletSkin,
 };
 
-// --- Skin Registry ---
-const skinRegistry: { [key:string]: React.FC<any> } = {
-  'gaming-retro': ClassicHandheldSkin,
-};
-
-// --- Game Screen Content Component ---
-const GameScreenContent: React.FC<{
+const StaticScreen: React.FC<{
     view: string;
     data: any;
-    activeGameData: Microgame | null;
+    activeGameData: MicrogameData | null;
     result: MicrogameResult | null;
     points: number;
     start: () => Promise<void>;
@@ -75,54 +42,49 @@ const GameScreenContent: React.FC<{
         case 'result':
             return <div style={textStyles}><h1 style={{ fontSize: '100px', fontWeight: 'bold', color: result?.win ? '#2ecc71' : '#e74c3c' }}>{result?.win ? 'WIN!' : 'LOSE'}</h1></div>;
         case 'end':
-            const linkedRewards = data.macrogame.rewards || [];
-            const allRewardsData = data.rewards || [];
-            const rewardsToShow = linkedRewards.map((linked: any) => {
-                const fullReward = allRewardsData.find((r: any) => r.id === linked.rewardId);
-                return { ...fullReward, ...linked };
-            });
-
-            return (
-                <div style={{...textStyles, justifyContent: 'flex-start' }}>
-                    <h2 style={{ margin: '0 0 10px', fontSize: '1.5em' }}>Game Over!</h2>
-                    <p style={{ margin: '0 0 15px', color: '#FFD700' }}>Total Points: {points}</p>
-                    <h3 style={{ margin: '0 0 10px', fontSize: '0.8em', alignSelf: 'flex-start' }}>Your Rewards:</h3>
-                    <div style={{ flex: 1, overflowY: 'auto', width: '100%', textAlign: 'left' }}>
-                        {rewardsToShow.length > 0 ? (
-                            rewardsToShow.map((reward: any) => (
-                                <div key={reward.rewardId} style={{ 
-                                    padding: '10px', marginBottom: '8px', 
-                                    border: `2px solid ${points >= reward.pointsCost ? '#2ecc71' : '#6c3483'}`,
-                                    borderRadius: '4px', background: 'rgba(255, 255, 255, 0.1)',
-                                    opacity: points >= reward.pointsCost ? 1 : 0.6
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <strong style={{ fontSize: '1em', color: '#f1c40f' }}>{reward.name}</strong>
-                                        <span style={{ background: '#6c3483', padding: '3px 8px', borderRadius: '4px', fontSize: '0.8em' }}>{reward.pointsCost} pts</span>
-                                    </div>
-                                </div>
-                            ))
-                        ) : ( <p>No rewards available.</p> )}
-                    </div>
-                    <button onClick={start} style={{ marginTop: '15px', padding: '10px', background: '#4CAF50', color: 'white', border: 'none', fontFamily: 'inherit', fontSize: '1em', cursor: 'pointer', width: '100%' }}>
-                        Play Again
-                    </button>
-                </div>
-            );
-        case 'game':
-        case 'loading':
+             const linkedRewards = data.macrogame.rewards || [];
+             const allRewardsData = data.rewards || [];
+             const rewardsToShow = linkedRewards.map((linked: any) => {
+                 const fullReward = allRewardsData.find((r: any) => r.id === linked.rewardId);
+                 return { ...fullReward, ...linked };
+             });
+             return (
+                 <div style={{...textStyles, justifyContent: 'flex-start' }}>
+                     <h2 style={{ margin: '0 0 10px', fontSize: '1.5em' }}>Game Over!</h2>
+                     <p style={{ margin: '0 0 15px', color: '#FFD700' }}>Total Points: {points}</p>
+                     <h3 style={{ margin: '0 0 10px', fontSize: '0.8em', alignSelf: 'flex-start' }}>Your Rewards:</h3>
+                     <div style={{ flex: 1, overflowY: 'auto', width: '100%', textAlign: 'left' }}>
+                         {rewardsToShow.length > 0 ? (
+                             rewardsToShow.map((reward: any) => (
+                                 <div key={reward.rewardId} style={{ 
+                                     padding: '10px', marginBottom: '8px', 
+                                     border: `2px solid ${points >= reward.pointsCost ? '#2ecc71' : '#6c3483'}`,
+                                     borderRadius: '4px', background: 'rgba(255, 255, 255, 0.1)',
+                                     opacity: points >= reward.pointsCost ? 1 : 0.6
+                                 }}>
+                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                         <strong style={{ fontSize: '1em', color: '#f1c40f' }}>{reward.name}</strong>
+                                         <span style={{ background: '#6c3483', padding: '3px 8px', borderRadius: '4px', fontSize: '0.8em' }}>{reward.pointsCost} pts</span>
+                                     </div>
+                                 </div>
+                             ))
+                         ) : ( <p>No rewards available.</p> )}
+                     </div>
+                     <button onClick={start} style={{ marginTop: '15px', padding: '10px', background: '#4CAF50', color: 'white', border: 'none', fontFamily: 'inherit', fontSize: '1em', cursor: 'pointer', width: '100%' }}>
+                         Play Again
+                     </button>
+                 </div>
+             );
         default:
             return null;
     }
 }
 
-// --- Main Preview Host Component ---
 const PreviewHost: React.FC = () => {
   const [data, setData] = useState<{ popup: Popup, macrogame: Macrogame, rewards: Reward[], skin: UISkin } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const gameAreaRef = useRef<HTMLDivElement>(null);
   
-  const engine = useMacroGameEngine(gameAreaRef, data?.macrogame, data?.rewards);
+  const engine = useMacroGameEngine(data?.macrogame, data?.rewards);
 
   useEffect(() => {
     try {
@@ -134,26 +96,49 @@ const PreviewHost: React.FC = () => {
     }
   }, []);
 
+  const hasStarted = useRef(false);
   useEffect(() => {
-    if (data) {
+    if (data && !hasStarted.current) {
       engine.start();
+      hasStarted.current = true;
     }
   }, [data, engine.start]);
-  
+
   if (error) {
     return <div className="preview-error"><h2>Preview Error</h2><p>{error}</p></div>;
   }
 
   if (!data || !engine.view || engine.view === 'loading') {
-    return null;
+    return <div className="preview-error"><h2>Loading Preview...</h2></div>;
   }
   
-  const SkinComponent = skinRegistry[data.skin.id] || LegacyPngSkin;
+  const SkinComponent = skinRegistry[data.skin.id];
+  if (!SkinComponent) {
+      return <div className="preview-error"><h2>Error</h2><p>UI Skin "{data.skin.name}" is not registered as a valid component.</p></div>;
+  }
+
+  let content: React.ReactNode = null;
+  if (engine.view === 'game' && engine.activeGameData) {
+      // **FIXED**: Corrected `engine.activeGame-data.id` to `engine.activeGameData.id`
+      const ActiveMicrogame = microgames[engine.activeGameData.id];
+      if (ActiveMicrogame) {
+          content = <ActiveMicrogame onEnd={engine.onGameEnd} skinConfig={{}} />;
+      } else {
+          content = <div>Error: Microgame "{engine.activeGameData.name}" not found.</div>
+      }
+  } else {
+      content = <StaticScreen {...engine} data={data} />;
+  }
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(3px)' }}>
-        <SkinComponent skin={data.skin} gameAreaRef={gameAreaRef}>
-          <GameScreenContent {...engine} data={data} />
+        <SkinComponent 
+          skin={data.skin}
+          isMuted={engine.isMuted}
+          onClose={() => window.close()}
+          onMute={engine.toggleMute}
+        >
+          {content}
         </SkinComponent>
     </div>
   );

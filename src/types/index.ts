@@ -1,17 +1,25 @@
 // A file to hold all of our custom types
 
-// UPDATED: The Microgame interface is now more detailed to support modular skins.
+export interface MicrogameResult {
+    win: boolean;
+}
+
+export interface MicrogameProps {
+    onEnd: (result: MicrogameResult) => void;
+    skinConfig: any;
+}
+
 export interface Microgame {
-    id: string; // e.g., 'clean'
-    name: string; // e.g., 'Clean!'
-    baseType: string; // The core mechanic, e.g., 'Click and Drag'
+    id: string;
+    name: string;
+    baseType: string;
     controls: string;
     length: number; // in seconds
     skins: {
-        [category: string]: { // e.g., 'Gaming & Electronics'
+        [category: string]: {
             description: string;
-            visuals: string; // Placeholder for visual assets
-            sfx: string; // Placeholder for sound effects
+            visuals: string;
+            sfx: string;
         }
     }
 }
@@ -19,14 +27,14 @@ export interface Microgame {
 export interface Macrogame {
     id:string;
     name: string;
-    category: string; // This is now just a tag, e.g., 'Gaming & Electronics'
+    category: string;
     type: string;
     createdAt: string;
     config: {
         introScreenText: string;
-        introScreenDuration: number; // in ms
-        titleScreenDuration: number; // in ms
-        controlsScreenDuration: number; // in ms
+        introScreenDuration: number;
+        titleScreenDuration: number;
+        controlsScreenDuration: number;
         backgroundMusicUrl: string | null;
     };
     flow: { microgameId: string; order: number }[];
@@ -53,21 +61,13 @@ export interface Popup {
     views: number;
     engagements: number;
     createdAt: string;
-    skinId?: string; // Optional: The ID of the UI skin to apply
+    skinId?: string;
 }
 
+// Updated: Simplified UISkin without category or type
 export interface UISkin {
     id: string;
     name: string;
-    category: 'Gaming' | 'General';
-    type: 'Retro' | 'Modern' | 'All';
-    imageUrl: string;
     fontFamily: string;
     fontUrl?: string;
-    gameArea: {
-        top: number;
-        left: number;
-        width: number;
-        height: number;
-    };
 }

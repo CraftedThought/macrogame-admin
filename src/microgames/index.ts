@@ -1,5 +1,7 @@
-import { MicrogameConstructor } from '../components/BaseMicrogame';
+import React from 'react';
+import { MicrogameProps } from '../types';
 
+// Import all the new React components
 import AvoidGame from './avoid';
 import CatchGame from './catch';
 import ClawGame from './claw';
@@ -11,8 +13,9 @@ import GrowGame from './grow';
 import PackageGame from './package';
 import TrimGame from './trim';
 
-// This registry maps a microgame ID (from Firestore) to its class.
-export const microgames: { [key: string]: MicrogameConstructor } = {
+// The complete registry maps a microgame ID to its React Component.
+// The IDs match the ones used in your `seedDatabase.ts` file.
+export const microgames: { [key: string]: React.FC<MicrogameProps> } = {
   'avoid': AvoidGame,
   'catch': CatchGame,
   'claw': ClawGame,

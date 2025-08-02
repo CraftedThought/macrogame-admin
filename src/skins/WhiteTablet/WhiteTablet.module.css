@@ -1,0 +1,74 @@
+.container {
+  position: relative;
+  width: 625px;
+  height: 328px;
+  background-color: #FFFFFF;
+  border: 3px solid #D5D5D5;
+  border-radius: 20px;
+  box-shadow: 
+    inset 6px 6px 4px rgba(255, 255, 255, 0.2),
+    inset -6px -6px 4px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gameArea {
+  position: absolute;
+  width: 545px;
+  height: 268px;
+  z-index: 1;
+  overflow: hidden;
+  background-color: black;
+}
+
+.cameraLens {
+  position: absolute;
+  left: 15px;
+  width: 10px;
+  height: 10px;
+}
+
+.homeButton {
+  position: absolute;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  background-color: #FFFFFF;
+  border: 1.5px solid #C9C9C9;
+  border-radius: 50%;
+}
+
+.exitButton, .muteButton {
+  position: absolute;
+  z-index: 2;
+  padding: 0;
+  border: none;
+  background-color: #EFEFEF;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exitButton:hover, .muteButton:hover {
+  background-color: #E0E0E0;
+}
+
+.exitButton {
+  top: 10px;
+  right: 10px;
+}
+
+.muteButton {
+  top: 10px;
+  right: 42px;
+}
+
+.exitButton img, .muteButton img {
+  width: 16px;
+  height: 16px;
+}

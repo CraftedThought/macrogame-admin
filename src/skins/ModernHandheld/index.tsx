@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import styles from './ClassicHandheld.module.css';
+import styles from './ModernHandheld.module.css';
 
 // SVG icons encoded as data URIs
 const MUTE_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M3 9v6h4l5 5V4L7 9H3zm13.59 3L15 10.41 16.41 9 18 10.59 19.59 9 21 10.41 19.41 12 21 13.59 19.59 15 18 13.41 16.41 15 15 13.59z'/%3E%3C/svg%3E";
@@ -12,24 +12,23 @@ interface Props {
   onMute: () => void;
 }
 
-const ClassicHandheldSkin: React.FC<Props> = ({ children, isMuted, onClose, onMute }) => {
+const ModernHandheldSkin: React.FC<Props> = ({ children, isMuted, onClose, onMute }) => {
   return (
     <div className={styles.container}>
-      {/* Decorative SVGs (Bottom Layer) */}
-      <img src="/assets/svgs/handheld-classic-accents.svg" className={styles.accents} alt="" />
-      <img src="/assets/svgs/handheld-classic-dpad.svg" className={styles.dpad} alt="D-pad graphic" />
-      <img src="/assets/svgs/handheld-classic-select-start.svg" className={styles.selectStart} alt="Select and Start buttons graphic" />
-      <img src="/assets/svgs/handheld-classic-ba-buttons.svg" className={styles.baButtons} alt="B and A buttons graphic" />
+      {/* Decorative SVGs */}
+      <img src="/assets/svgs/handheld-modern-dpad.svg" className={styles.dpad} alt="D-pad graphic" />
+      <img src="/assets/svgs/handheld-modern-select-start.svg" className={styles.selectStart} alt="Select and Start buttons graphic" />
+      <img src="/assets/svgs/handheld-modern-buttons.svg" className={styles.buttons} alt="Action buttons graphic" />
 
-      {/* Game Screen Trim (Middle Layer) */}
+      {/* Game Screen Trim */}
       <div className={styles.screenTrimFrame} />
       
-      {/* Game Area (Top Layer) */}
+      {/* Game Area */}
       <div className={styles.gameArea}>
         {children}
       </div>
 
-      {/* Functional Buttons (Absolute Top Layer) */}
+      {/* Functional Buttons */}
       <button onClick={onMute} className={styles.muteButton} aria-label={isMuted ? 'Unmute' : 'Mute'}>
         <img src={isMuted ? MUTE_ICON : UNMUTE_ICON} alt="Mute/Unmute audio" />
       </button>
@@ -40,4 +39,4 @@ const ClassicHandheldSkin: React.FC<Props> = ({ children, isMuted, onClose, onMu
   );
 };
 
-export default ClassicHandheldSkin;
+export default ModernHandheldSkin;
