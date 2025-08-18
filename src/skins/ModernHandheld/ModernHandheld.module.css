@@ -18,7 +18,7 @@
   height: 268px;
   z-index: 2;
   overflow: hidden;
-  background-color: black;
+  background-color: #080817;
 }
 
 .screenTrimFrame {
@@ -31,6 +31,27 @@
   border: 2px solid #585858;
   border-radius: 5px;
   z-index: 1;
+}
+
+.title {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.subtitle {
+  position: absolute;
+  top: 370px; /* Same top as dpad */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 1rem;
+  color: #CCCCCC;
 }
 
 .dpad, .selectStart, .buttons {

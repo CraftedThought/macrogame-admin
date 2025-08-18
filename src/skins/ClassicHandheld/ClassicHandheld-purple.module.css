@@ -1,0 +1,131 @@
+.container {
+  position: relative;
+  width: 675px; 
+  height: 526px;
+  background-color: #4F2C84; /* Purple */
+  border-top-left-radius: 20px;
+  border-top-right-radius: 7px;
+  border-bottom-left-radius: 7px;
+  border-bottom-right-radius: 75px;
+  box-shadow:
+    inset 6px 6px 4px 0 rgba(255, 255, 255, 0.1), /* Purple Spec */
+    inset -6px -6px 4px 0 rgba(0, 0, 0, 0.06); /* Purple Spec */
+  overflow: hidden;
+}
+
+.gameArea {
+  position: absolute;
+  top: 90px;
+  left: 65px;
+  width: 545px;
+  height: 268px;
+  z-index: 2;
+  overflow: hidden;
+  background-color: #080817;
+}
+
+.screenTrimFrame {
+  position: absolute;
+  top: 75px; 
+  left: 25px;
+  z-index: 1;
+  width: 625px;
+  height: 298px;
+  background-color: #2F2F2F; /* Purple Spec */
+  border: 2px solid #1E1E1E; /* Purple Spec */
+  border-radius: 15px 15px 40px 15px;
+}
+
+.title {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #FFFFFF; /* Purple Spec */
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+}
+
+.subtitle {
+  position: absolute;
+  top: 388px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 0.9rem;
+  color: #E0E0E0; /* Purple Spec */
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+}
+
+.accents, .dpad, .selectStart, .baButtons {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.accents {
+  width: 674px;
+  height: 53px;
+  top: 0;
+  right: 0;
+}
+
+.dpad {
+  width: 108px;
+  height: 108px;
+  left: 35px;
+  top: 388px;
+}
+
+.selectStart {
+  width: 95px;
+  height: 27px;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 25px;
+}
+
+.baButtons {
+  width: 128px;
+  height: 120px;
+  top: 388px;
+  right: 31px;
+}
+
+.exitButton, .muteButton {
+  position: absolute;
+  z-index: 3;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  width: 33px;
+  height: 33px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exitButton:hover, .muteButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.exitButton {
+  top: 7px;
+  right: 11px;
+}
+
+.muteButton {
+  top: 7px;
+  right: 67px;
+}
+
+.exitButton img, .muteButton img {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}

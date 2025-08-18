@@ -1,11 +1,15 @@
+// src/main.tsx
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App'; // Corrected import path
+import App from './App';
 import './index.css';
+import { DataProvider } from './context/DataContext'; // <-- ADD THIS LINE
 
-// The '!' tells TypeScript we are certain that the element exists.
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <DataProvider> {/* <-- ADD THIS WRAPPER */}
+      <App />
+    </DataProvider> {/* <-- ADD THIS WRAPPER */}
   </React.StrictMode>,
 );

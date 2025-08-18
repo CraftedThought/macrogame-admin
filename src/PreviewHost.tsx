@@ -1,20 +1,23 @@
+// src/PreviewHost.tsx
+
 import React, { useEffect, useState, useRef } from 'react';
 import { Popup, Macrogame, Reward, UISkin, Microgame as MicrogameData, MicrogameResult } from './types';
 import { useMacroGameEngine } from './hooks/useMacroGameEngine';
 import { microgames } from './microgames';
 
-// Import all skin components
 import ClassicHandheldSkin from './skins/ClassicHandheld';
 import ModernHandheldSkin from './skins/ModernHandheld';
-import WhiteTabletSkin from './skins/WhiteTablet';
+import TabletSkin from './skins/Tablet';
+import BarebonesSkin from './skins/Barebones';
 
-// The registry with corrected keys
 const skinRegistry: { [key: string]: React.FC<any> } = {
   'classic-handheld': ClassicHandheldSkin,
   'modern-handheld': ModernHandheldSkin,
-  'white-tablet': WhiteTabletSkin,
+  'tablet': TabletSkin,
+  'barebones': BarebonesSkin,
 };
 
+// The StaticScreen component renders non-interactive views like intros, results, and the new promo screen.
 const StaticScreen: React.FC<{
     view: string;
     data: any;
@@ -23,12 +26,7 @@ const StaticScreen: React.FC<{
     points: number;
     start: () => Promise<void>;
 }> = ({ view, data, activeGameData, result, points, start }) => {
-    const textStyles: React.CSSProperties = {
-        width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-        justifyContent: 'center', alignItems: 'center', color: 'white',
-        textAlign: 'center', fontFamily: data.skin.fontFamily || 'sans-serif',
-        textShadow: '3px 3px 3px rgba(0,0,0,0.5)', padding: '20px', boxSizing: 'border-box'
-    };
+    const textStyles: React.CSSProperties = { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center', fontFamily: data.skin.fontFamily || 'sans-serif', textShadow: '3px 3px 3px rgba(0,0,0,0.5)', padding: '20px', boxSizing: 'border-box', backgroundSize: 'cover', backgroundPosition: 'center' };
 
     switch (view) {
         case 'intro':
@@ -41,13 +39,16 @@ const StaticScreen: React.FC<{
             return <div style={textStyles}><h2 style={{ fontSize: '1.5em' }}>{activeGameData?.controls}</h2><p style={{marginTop: '1rem'}}>{description}</p></div>;
         case 'result':
             return <div style={textStyles}><h1 style={{ fontSize: '100px', fontWeight: 'bold', color: result?.win ? '#2ecc71' : '#e74c3c' }}>{result?.win ? 'WIN!' : 'LOSE'}</h1></div>;
+        // NEW (Req 4): Added a case to render the promo screen.
+        case 'promo':
+            const promoConfig = data.macrogame.promoScreen;
+            const promoStyle = promoConfig.backgroundImageUrl 
+                ? { ...textStyles, backgroundImage: `url(${promoConfig.backgroundImageUrl})` } 
+                : { ...textStyles, backgroundColor: '#1a1a2e' };
+            return <div style={promoStyle}><h1 style={{ fontSize: '2em', backgroundColor: 'rgba(0,0,0,0.5)', padding: '1rem' }}>{promoConfig.text}</h1></div>;
         case 'end':
-             const linkedRewards = data.macrogame.rewards || [];
-             const allRewardsData = data.rewards || [];
-             const rewardsToShow = linkedRewards.map((linked: any) => {
-                 const fullReward = allRewardsData.find((r: any) => r.id === linked.rewardId);
-                 return { ...fullReward, ...linked };
-             });
+             const linkedRewards = data.macrogame.rewards || []; const allRewardsData = data.rewards || [];
+             const rewardsToShow = linkedRewards.map((linked: any) => ({ ...allRewardsData.find((r: any) => r.id === linked.rewardId), ...linked }));
              return (
                  <div style={{...textStyles, justifyContent: 'flex-start' }}>
                      <h2 style={{ margin: '0 0 10px', fontSize: '1.5em' }}>Game Over!</h2>
@@ -56,12 +57,7 @@ const StaticScreen: React.FC<{
                      <div style={{ flex: 1, overflowY: 'auto', width: '100%', textAlign: 'left' }}>
                          {rewardsToShow.length > 0 ? (
                              rewardsToShow.map((reward: any) => (
-                                 <div key={reward.rewardId} style={{ 
-                                     padding: '10px', marginBottom: '8px', 
-                                     border: `2px solid ${points >= reward.pointsCost ? '#2ecc71' : '#6c3483'}`,
-                                     borderRadius: '4px', background: 'rgba(255, 255, 255, 0.1)',
-                                     opacity: points >= reward.pointsCost ? 1 : 0.6
-                                 }}>
+                                 <div key={reward.rewardId} style={{ padding: '10px', marginBottom: '8px', border: `2px solid ${points >= reward.pointsCost ? '#2ecc71' : '#6c3483'}`, borderRadius: '4px', background: 'rgba(255, 255, 255, 0.1)', opacity: points >= reward.pointsCost ? 1 : 0.6 }}>
                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                          <strong style={{ fontSize: '1em', color: '#f1c40f' }}>{reward.name}</strong>
                                          <span style={{ background: '#6c3483', padding: '3px 8px', borderRadius: '4px', fontSize: '0.8em' }}>{reward.pointsCost} pts</span>
@@ -70,20 +66,16 @@ const StaticScreen: React.FC<{
                              ))
                          ) : ( <p>No rewards available.</p> )}
                      </div>
-                     <button onClick={start} style={{ marginTop: '15px', padding: '10px', background: '#4CAF50', color: 'white', border: 'none', fontFamily: 'inherit', fontSize: '1em', cursor: 'pointer', width: '100%' }}>
-                         Play Again
-                     </button>
+                     <button onClick={start} style={{ marginTop: '15px', padding: '10px', background: '#4CAF50', color: 'white', border: 'none', fontFamily: 'inherit', fontSize: '1em', cursor: 'pointer', width: '100%' }}>Play Again</button>
                  </div>
              );
-        default:
-            return null;
+        default: return null;
     }
 }
 
 const PreviewHost: React.FC = () => {
   const [data, setData] = useState<{ popup: Popup, macrogame: Macrogame, rewards: Reward[], skin: UISkin } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
   const engine = useMacroGameEngine(data?.macrogame, data?.rewards);
 
   useEffect(() => {
@@ -91,9 +83,7 @@ const PreviewHost: React.FC = () => {
       const rawData = localStorage.getItem('macrogame_preview_data');
       if (!rawData) throw new Error("No preview data found.");
       setData(JSON.parse(rawData));
-    } catch (e: any) {
-      setError(e.message);
-    }
+    } catch (e: any) { setError(e.message); }
   }, []);
 
   const hasStarted = useRef(false);
@@ -104,40 +94,23 @@ const PreviewHost: React.FC = () => {
     }
   }, [data, engine.start]);
 
-  if (error) {
-    return <div className="preview-error"><h2>Preview Error</h2><p>{error}</p></div>;
-  }
-
-  if (!data || !engine.view || engine.view === 'loading') {
-    return <div className="preview-error"><h2>Loading Preview...</h2></div>;
-  }
+  if (error) { return <div className="preview-error"><h2>Preview Error</h2><p>{error}</p></div>; }
+  if (!data || !engine.view || engine.view === 'loading') { return <div className="preview-error"><h2>Loading Preview...</h2></div>; }
   
   const SkinComponent = skinRegistry[data.skin.id];
-  if (!SkinComponent) {
-      return <div className="preview-error"><h2>Error</h2><p>UI Skin "{data.skin.name}" is not registered as a valid component.</p></div>;
-  }
+  if (!SkinComponent) { return <div className="preview-error"><h2>Error</h2><p>UI Skin "{data.skin.name}" is not registered.</p></div>; }
 
   let content: React.ReactNode = null;
   if (engine.view === 'game' && engine.activeGameData) {
-      // **FIXED**: Corrected `engine.activeGame-data.id` to `engine.activeGameData.id`
       const ActiveMicrogame = microgames[engine.activeGameData.id];
-      if (ActiveMicrogame) {
-          content = <ActiveMicrogame onEnd={engine.onGameEnd} skinConfig={{}} />;
-      } else {
-          content = <div>Error: Microgame "{engine.activeGameData.name}" not found.</div>
-      }
-  } else {
-      content = <StaticScreen {...engine} data={data} />;
-  }
+      const skinConfig = (engine.activeGameData as any).customSkinData || {};
+      if (ActiveMicrogame) { content = <ActiveMicrogame onEnd={engine.onGameEnd} skinConfig={skinConfig} gameData={engine.activeGameData} />;
+      } else { content = <div>Error: Microgame "{engine.activeGameData.name}" not found.</div> }
+  } else { content = <StaticScreen {...engine} data={data} />; }
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(3px)' }}>
-        <SkinComponent 
-          skin={data.skin}
-          isMuted={engine.isMuted}
-          onClose={() => window.close()}
-          onMute={engine.toggleMute}
-        >
+        <SkinComponent skin={data.skin} isMuted={engine.isMuted} onClose={() => window.close()} onMute={engine.toggleMute} title={data.popup.title} subtitle={data.popup.subtitle} colorScheme={data.popup.colorScheme}>
           {content}
         </SkinComponent>
     </div>

@@ -1,0 +1,95 @@
+.container {
+  position: relative;
+  width: 625px;
+  height: 368px;
+  background-color: #000000; /* Black */
+  border: 3px solid #3B3B3B; /* Black Spec */
+  border-radius: 20px;
+  box-shadow: 
+    inset 6px 6px 4px rgba(255, 255, 255, 0.2), /* Black Spec */
+    inset -6px -6px 4px rgba(0, 0, 0, 0.15); /* Black Spec */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gameArea {
+  position: absolute;
+  width: 545px;
+  height: 268px;
+  z-index: 1;
+  overflow: hidden;
+  background-color: #080817;
+}
+
+.title {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #FFFFFF; /* Black Spec */
+}
+
+.subtitle {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    font-size: 0.9rem;
+    color: #CCCCCC; /* Black Spec */
+}
+
+.cameraLens {
+  position: absolute;
+  left: 15px;
+  width: 10px;
+  height: 10px;
+}
+
+.homeButton {
+  position: absolute;
+  right: 10px; /* This was left in the doc, but right is more conventional */
+  width: 22px;
+  height: 22px;
+  background-color: #000000; /* Black Spec */
+  border: 1.5px solid #3B3B3B; /* Black Spec */
+  border-radius: 50%;
+}
+
+.exitButton, .muteButton {
+  position: absolute;
+  z-index: 2;
+  padding: 0;
+  border: none;
+  background-color: #333333; /* Black Spec */
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exitButton:hover, .muteButton:hover {
+  background-color: #444444; /* Black Spec */
+}
+
+.exitButton {
+  top: 10px;
+  right: 10px;
+}
+
+.muteButton {
+  top: 10px;
+  right: 42px;
+}
+
+.exitButton img, .muteButton img {
+  width: 16px;
+  height: 16px;
+}

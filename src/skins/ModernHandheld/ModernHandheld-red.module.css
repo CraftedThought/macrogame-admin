@@ -1,0 +1,109 @@
+.container {
+  position: relative;
+  width: 625px;
+  height: 500px;
+  background-color: #791616; /* Red */
+  border-radius: 10px;
+  box-shadow: 
+    inset 6px 6px 4px rgba(255, 255, 255, 0.1), /* Red Spec */
+    inset -6px -6px 4px rgba(0, 0, 0, 0.1); /* Red Spec */
+  overflow: hidden;
+}
+
+.gameArea {
+  position: absolute;
+  top: 77px;
+  left: 40px;
+  width: 545px;
+  height: 268px;
+  z-index: 2;
+  overflow: hidden;
+  background-color: #080817;
+}
+
+.screenTrimFrame {
+  position: absolute;
+  top: 67px;
+  left: 30px;
+  width: 565px;
+  height: 288px;
+  background-color: #1B1B1B; /* Red Spec */
+  border: 2px solid #363636; /* Red Spec */
+  border-radius: 5px;
+  z-index: 1;
+}
+
+.title {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.subtitle {
+  position: absolute;
+  top: 370px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 1rem;
+  color: #E0E0E0;
+}
+
+.dpad, .selectStart, .buttons {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.dpad {
+  width: 108px;
+  height: 108px;
+  left: 40px;
+  top: 370px;
+}
+
+.selectStart {
+  width: 95px;
+  height: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 460px;
+}
+
+.buttons {
+  width: 108px;
+  height: 108px;
+  right: 40px;
+  top: 370px;
+}
+
+.exitButton, .muteButton {
+  position: absolute;
+  z-index: 3;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  width: 33px;
+  height: 33px;
+  border-radius: 50%;
+}
+
+.exitButton:hover, .muteButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.exitButton {
+  top: 7px;
+  right: 11px;
+}
+
+.muteButton {
+  top: 7px;
+  right: 52px;
+}

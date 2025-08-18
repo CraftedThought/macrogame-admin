@@ -1,244 +1,38 @@
+// src/scripts/seedDatabase.ts
+
 import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
-import { db } from '../App'; // Assuming db is exported from App.tsx
+import { db } from '../firebase/config';
 import { Microgame } from '../types';
 
+// This is the new master list of 22 microgames from the final spec document.
 const microgames: Omit<Microgame, 'id'>[] = [
-    {
-        name: 'Avoid!',
-        baseType: 'Player Movement',
-        controls: 'WASD/Arrows to Move',
-        length: 8,
-        skins: {
-            'Gaming & Electronics': {
-                description: 'Dodge the incoming fireballs!',
-                visuals: 'player-ship, fireballs',
-                sfx: 'laser-whoosh.wav'
-            },
-            'Cannabis': {
-                description: 'Avoid the red tape!',
-                visuals: 'leaf, red-tape',
-                sfx: 'paper-rustle.wav'
-            },
-            'Pet Products': {
-                description: 'Keep the puppy away from the chocolate!',
-                visuals: 'puppy, chocolate-bar',
-                sfx: 'bark.wav'
-            }
-        }
-    },
-    {
-        name: 'Catch!',
-        baseType: 'Catch Falling Objects',
-        controls: 'Left/Right Arrows',
-        length: 10,
-        skins: {
-            'Gaming & Electronics': {
-                description: 'Catch the falling coins!',
-                visuals: 'basket, coins',
-                sfx: 'coin-collect.wav'
-            },
-            'Cannabis': {
-                description: 'Catch the falling drops!',
-                visuals: 'bottle, drops',
-                sfx: 'droplet.wav'
-            },
-            'Pet Products': {
-                description: 'Catch the falling dog treats!',
-                visuals: 'dog-bowl, treats',
-                sfx: 'crunch.wav'
-            }
-        }
-    },
-    {
-        name: 'Claw!',
-        baseType: 'Claw Machine',
-        controls: 'Arrows to Move, Space to Drop',
-        length: 12,
-        skins: {
-            'Gaming & Electronics': {
-                description: 'Grab the rare CPU!',
-                visuals: 'claw, cpu-chip',
-                sfx: 'mechanical-whir.wav'
-            },
-            'Cannabis': {
-                description: 'Grab the best bud!',
-                visuals: 'claw, bud',
-                sfx: 'mechanical-whir.wav'
-            },
-            'Pet Products': {
-                description: 'Grab the squeaky toy!',
-                visuals: 'claw, squeaky-toy',
-                sfx: 'squeak.wav'
-            }
-        }
-    },
-    {
-        name: 'Clean!',
-        baseType: 'Click and Drag',
-        controls: 'Click and Drag Mouse',
-        length: 8,
-        skins: {
-            'Gaming & Electronics': {
-                description: 'Wipe the dust off the screen!',
-                visuals: 'cloth, dusty-screen',
-                sfx: 'wipe.wav'
-            },
-            'Cannabis': {
-                description: 'Clean the glass!',
-                visuals: 'cloth, dirty-glass',
-                sfx: 'wipe.wav'
-            },
-            'Pet Products': {
-                description: 'Brush the dog\'s fur!',
-                visuals: 'brush, matted-fur',
-                sfx: 'brushing.wav'
-            }
-        }
-    },
-    {
-        name: 'Collect!',
-        baseType: 'Collection',
-        controls: 'WASD/Arrows to Move',
-        length: 10,
-        skins: {
-            'Gaming & Electronics': {
-                description: 'Collect all the battery packs!',
-                visuals: 'character, batteries',
-                sfx: 'power-up.wav'
-            },
-            'Cannabis': {
-                description: 'Collect all the ripe buds!',
-                visuals: 'character, buds',
-                sfx: 'pickup.wav'
-            },
-            'Pet Products': {
-                description: 'Collect all the tennis balls!',
-                visuals: 'dog, tennis-balls',
-                sfx: 'pickup.wav'
-            }
-        }
-    },
-    {
-        name: 'Consume!',
-        baseType: 'Rapid Clicking',
-        controls: 'Click repeatedly',
-        length: 7,
-        skins: {
-            'Gaming & Electronics': {
-                description: 'Mash the button to power up!',
-                visuals: 'power-bar, button',
-                sfx: 'click-powerup.wav'
-            },
-            'Cannabis': {
-                description: 'Tap to consume!',
-                visuals: 'joint, smoke-effect',
-                sfx: 'inhale.wav'
-            },
-            'Pet Products': {
-                description: 'Help the dog eat its food!',
-                visuals: 'dog-eating, food-bowl',
-                sfx: 'eating-fast.wav'
-            }
-        }
-    },
-    {
-        name: 'Escape!',
-        baseType: 'Maze Navigation',
-        controls: 'WASD/Arrows to Move',
-        length: 12,
-        skins: {
-            'Gaming & Electronics': {
-                description: 'Escape the digital maze!',
-                visuals: 'player-avatar, digital-walls',
-                sfx: 'digital-step.wav'
-            },
-            'Cannabis': {
-                description: 'Navigate the greenhouse!',
-                visuals: 'person, plant-walls',
-                sfx: 'footstep-dirt.wav'
-            },
-            'Pet Products': {
-                description: 'Help the hamster escape the maze!',
-                visuals: 'hamster, maze-walls',
-                sfx: 'scamper.wav'
-            }
-        }
-    },
-    {
-        name: 'Grow!',
-        baseType: 'Timing/Hold and Release',
-        controls: 'Hold and Release Spacebar',
-        length: 8,
-        skins: {
-            'Gaming & Electronics': {
-                description: 'Charge the power beam!',
-                visuals: 'power-meter, beam',
-                sfx: 'charge-up.wav'
-            },
-            'Cannabis': {
-                description: 'Grow the plant to the perfect height!',
-                visuals: 'plant-stalk, light-meter',
-                sfx: 'grow-sound.wav'
-            },
-            'Pet Products': {
-                description: 'Fill the water bowl just right!',
-                visuals: 'water-level, bowl',
-                sfx: 'water-fill.wav'
-            }
-        }
-    },
-    {
-        name: 'Package!',
-        baseType: 'Drag and Drop',
-        controls: 'Drag items to the box',
-        length: 10,
-        skins: {
-            'Gaming & Electronics': {
-                description: 'Put the components in the box!',
-                visuals: 'cpu, ram, box',
-                sfx: 'item-drop.wav'
-            },
-            'Cannabis': {
-                description: 'Package the product!',
-                visuals: 'product-bag, shipping-box',
-                sfx: 'tape-sound.wav'
-            },
-            'Pet Products': {
-                description: 'Pack the pet carrier!',
-                visuals: 'toy, blanket, carrier',
-                sfx: 'zip-sound.wav'
-            }
-        }
-    },
-    {
-        name: 'Trim!',
-        baseType: 'Precision Clicking',
-        controls: 'Click the targets',
-        length: 9,
-        skins: {
-            'Gaming & Electronics': {
-                description: 'Trim the excess circuits!',
-                visuals: 'circuit-board, snips',
-                sfx: 'snip.wav'
-            },
-            'Cannabis': {
-                description: 'Trim the leaves!',
-                visuals: 'plant, scissors',
-                sfx: 'snip.wav'
-            },
-            'Pet Products': {
-                description: 'Clip the dog\'s nails!',
-                visuals: 'paw, clippers',
-                sfx: 'clip.wav'
-            }
-        }
-    }
+    { name: 'Avoid!', baseType: 'Player Movement', controls: 'WASD or Arrows for movement', length: 5, tempo: 'Fast', skins: {} },
+    { name: 'Build!', baseType: 'Jigsaw Puzzle', controls: 'Click and Drag', length: 7, tempo: 'Normal', skins: {} },
+    { name: 'Catch!', baseType: 'Catch Falling Objects', controls: 'A and D or Left and Right Arrows', length: 5, tempo: 'Fast', skins: {} },
+    { name: 'Claw!', baseType: 'Claw Machine', controls: 'A and D or Left and Right Arrows and Spacebar or Click', length: 10, tempo: 'Normal', skins: {} },
+    { name: 'Clean!', baseType: 'Wipe to Reveal', controls: 'Click and Drag', length: 5, tempo: 'Fast', skins: {} },
+    { name: 'Collect!', baseType: 'Collection', controls: 'Point and Click', length: 5, tempo: 'Fast', skins: {} },
+    { name: 'Consume!', baseType: 'Rapid Clicking', controls: 'Point and Click', length: 5, tempo: 'Fast', skins: {} },
+    { name: 'Drop!', baseType: 'Timing Drop', controls: 'Click or Spacebar', length: 7, tempo: 'Fast', skins: {} },
+    { name: 'Escape!', baseType: 'Maze Navigation', controls: 'WASD or Arrows for movement', length: 5, tempo: 'Fast', skins: {} },
+    { name: 'Frame!', baseType: 'Positioning', controls: 'Click and Drag', length: 5, tempo: 'Fast', skins: {} },
+    { name: 'Grab!', baseType: 'Reaction / Tapping', controls: 'Click or Spacebar', length: 7, tempo: 'Normal', skins: {} },
+    { name: 'Grow!', baseType: 'Collection / Growth', controls: 'Click, Drag, and Drop', length: 7, tempo: 'Normal', skins: {} },
+    { name: 'Like!', baseType: 'Reaction / Identification', controls: 'Point and Click', length: 7, tempo: 'Fast', skins: {} },
+    { name: 'LineUp!', baseType: 'Sequencing / Ordering', controls: 'Click, Drag, and Drop', length: 7, tempo: 'Normal', skins: {} },
+    { name: 'Match!', baseType: 'Memory / Card Flip', controls: 'Point and Click', length: 10, tempo: 'Slow', skins: {} },
+    { name: 'MatchUp!', baseType: 'Matching Pairs', controls: 'Point and Click', length: 10, tempo: 'Slow', skins: {} },
+    { name: 'Organize!', baseType: 'Categorization', controls: 'Click, Drag, and Drop', length: 10, tempo: 'Slow', skins: {} },
+    { name: 'Package!', baseType: 'Drag and Drop', controls: 'Click, Drag, and Drop', length: 7, tempo: 'Fast', skins: {} },
+    { name: 'Pop!', baseType: 'Reaction / Tapping', controls: 'Point and Click', length: 7, tempo: 'Normal', skins: {} },
+    { name: 'Spot!', baseType: 'Reaction / Identification', controls: 'Point and Click', length: 7, tempo: 'Normal', skins: {} },
+    { name: 'Trade!', baseType: 'Selection', controls: 'Point and Click', length: 7, tempo: 'Normal', skins: {} },
+    { name: 'Vote!', baseType: 'Selection', controls: 'Point and Click', length: 7, tempo: 'Fast', skins: {} },
 ];
 
 export async function seedMicrogames() {
     const microgamesCollection = collection(db, 'microgames');
     
-    // This new version ALWAYS clears the collection first.
     console.log("Clearing existing microgames...");
     const existingDocs = await getDocs(microgamesCollection);
     for (const docSnapshot of existingDocs.docs) {
@@ -246,11 +40,9 @@ export async function seedMicrogames() {
     }
     console.log("Existing microgames cleared.");
 
-    // Add new microgames
-    console.log("Seeding new microgames...");
+    console.log("Seeding new master list of microgames...");
     for (const game of microgames) {
-        // Use the game name (lowercase, no '!') as the document ID for consistency.
-        const docId = game.name.toLowerCase().replace('!', '');
+        const docId = game.name.toLowerCase().replace(/!/g, '');
         const docRef = doc(microgamesCollection, docId);
         try {
             await setDoc(docRef, game);
@@ -259,5 +51,5 @@ export async function seedMicrogames() {
             console.error(`Error seeding ${game.name}:`, error);
         }
     }
-    console.log("Database seeding complete!");
+    console.log("Database master list seeding complete!");
 }
