@@ -8,20 +8,17 @@ export interface UISkin {
   fontUrl?: string; // Optional URL for custom fonts
 }
 
-// Configuration for a custom promotional screen shown after the games.
-export interface PromoScreenConfig {
+// A reusable config for screens like Intro and Promo.
+export interface ScreenConfig {
   enabled: boolean;
+  text: string;
+  duration: number; // Duration in seconds
   backgroundImageUrl?: string;
-  text?: string;
-  duration?: number;      // Duration in seconds for the screen to show
-  clickToContinue?: boolean; // If true, user must click to advance
+  clickToContinue: boolean;
 }
 
 // Configuration options for a single Macrogame.
 export interface MacrogameConfig {
-  showIntroScreen: boolean; // NEW: Toggle for the intro screen's visibility.
-  introScreenText: string;
-  introScreenDuration: number;
   titleScreenDuration: number;
   controlsScreenDuration: number;
   backgroundMusicUrl: string | null;
@@ -41,14 +38,17 @@ export interface Macrogame {
   category: string;
   createdAt: string;
   config: MacrogameConfig;
+  introScreen: ScreenConfig;
+  promoScreen: ScreenConfig;
   flow: MacrogameFlowItem[];
   rewards: { rewardId: string; name: string; pointsCost: number }[];
-  promoScreen?: PromoScreenConfig; // NEW: Holds config for the new promo screen.
   type: 'default' | 'wizard';
+  isFavorite?: boolean;
 }
 
 // Base properties for all microgames, stored in the database.
 export interface Microgame {
+  isActive?: boolean;
   id: string;
   name:string;
   baseType: string;
@@ -58,9 +58,9 @@ export interface Microgame {
   skins: {
       [category: string]: {
           description: string;
-          // skin elements will be defined here, e.g., player_svg: 'url'
       }
   };
+  isFavorite?: boolean;
 }
 
 // A user-created variant of a base microgame.
@@ -68,8 +68,9 @@ export interface CustomMicrogame {
     id: string;
     name: string;
     baseMicrogameId: string;
+    baseMicrogameName: string;
     createdAt: string;
-    skinData: { [key: string]: string }; // URLs to custom assets
+    skinData: { [key: string]: { url: string; fileName: string } };
 }
 
 // Defines the schedule for when a popup can appear.
@@ -86,11 +87,10 @@ export interface Popup {
   name: string;
   macrogameId: string;
   macrogameName: string;
-  status: 'Draft' | 'Active';
+  status: 'Draft' | 'Active' | 'Paused';
   views: number;
   engagements: number;
   createdAt: string;
-  // NEW/OPTIONAL fields for popup configuration
   skinId?: string;
   title?: string;
   subtitle?: string;
@@ -98,6 +98,7 @@ export interface Popup {
   trigger?: 'exit_intent' | 'timed' | 'scroll';
   audience?: 'all_visitors' | 'new_visitors' | 'returning_visitors';
   schedule?: PopupSchedule;
+  isFavorite?: boolean; // This is the intended addition
 }
 
 // Data for a single reward that can be earned.
@@ -110,23 +111,26 @@ export interface Reward {
   createdAt: string;
   redemptions: number;
   conversionRate: number;
+  appliesTo?: 'entire_order' | 'specific_products' | 'specific_collections';
+  minimumPurchaseAmount?: number;
+  limitToOneUsePerCustomer?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 // The result of a single microgame play.
 export interface MicrogameResult {
   win: boolean;
-  // score?: number; // Optional score, if applicable
 }
 
 // Props passed to every microgame component.
 export interface MicrogameProps {
   onEnd: (result: MicrogameResult) => void;
-  skinConfig: { [key: string]: string }; // URLs to assets for the current skin
-  gameData: Microgame; // The microgame's own metadata
+  skinConfig: { [key: string]: string };
+  gameData: Microgame;
 }
 
 // Represents the currently active page in the main App component.
 export interface CurrentPage {
   page: 'creator' | 'manager' | 'popups' | 'microgames' | 'rewards';
-  // params?: { [key: string]: any }; // For future use, e.g., editing a specific ID
 }

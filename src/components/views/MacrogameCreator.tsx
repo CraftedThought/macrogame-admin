@@ -8,12 +8,11 @@ import { MacrogameForm } from './MacrogameForm';
 
 interface MacrogameCreatorProps {
     setCurrentPage: React.Dispatch<React.SetStateAction<CurrentPage>>;
-    onLaunchWizard: () => void; // <-- ADDED PROP
+    onLaunchWizard: () => void;
 }
 
 export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ setCurrentPage, onLaunchWizard }) => {
     const { macrogames, createMacrogame } = useData();
-    
     const [listPage, setListPage] = useState(1);
     const ITEMS_PER_PAGE = 5;
 
@@ -28,7 +27,6 @@ export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ setCurrentPa
 
     return (
         <>
-            {/* --- NEW WIZARD LAUNCHER SECTION --- */}
             <div style={{...styles.creatorSection, marginBottom: '2rem'}}>
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                     <div>
@@ -38,7 +36,6 @@ export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ setCurrentPa
                     <button onClick={onLaunchWizard} style={styles.createButton}>Launch Wizard</button>
                 </div>
             </div>
-            {/* --- END NEW SECTION --- */}
 
             <MacrogameForm onSave={handleSave} setCurrentPage={setCurrentPage} />
 
@@ -64,7 +61,8 @@ export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ setCurrentPa
                     </div>
                 )}
             </div>
-            <div style={{ height: '50vh' }}></div>
+            
+            <div style={{ height: '30px' }}></div>
         </>
     );
 };

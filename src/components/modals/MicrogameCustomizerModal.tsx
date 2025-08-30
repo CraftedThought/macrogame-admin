@@ -1,25 +1,28 @@
+// src/components/modals/MicrogameCustomizerModal.tsx
+
 import React, { useState, useEffect } from 'react';
 import { styles } from '../../App.styles';
-import { Microgame } from '../../types';
+import { Microgame, CustomMicrogame } from '../../types';
 import { SKINNABLE_ELEMENTS } from '../../constants';
 
 interface MicrogameCustomizerModalProps {
     microgame: Microgame | null;
+    existingVariant?: CustomMicrogame | null;
     onClose: () => void;
-    onSave: (microgame: Microgame, variantName: string, skinFiles: { [key: string]: File }) => Promise<void>;
+    onSave: (baseGame: Microgame, variantName: string, skinFiles: { [key: string]: File }, existingVariant?: CustomMicrogame) => Promise<void>;
 }
 
-export const MicrogameCustomizerModal: React.FC<MicrogameCustomizerModalProps> = ({ microgame, onClose, onSave }) => {
+export const MicrogameCustomizerModal: React.FC<MicrogameCustomizerModalProps> = ({ microgame, existingVariant, onClose, onSave }) => {
     const [variantName, setVariantName] = useState('');
     const [skinFiles, setSkinFiles] = useState<{ [key: string]: File | null }>({});
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (microgame) {
-            setVariantName(`${microgame.name} - Custom`);
+            setVariantName(existingVariant ? existingVariant.name : `${microgame.name} - Custom`);
             setSkinFiles({});
         }
-    }, [microgame]);
+    }, [microgame, existingVariant]);
 
     const handleFileChange = (elementId: string, file: File | null) => {
         setSkinFiles(prev => ({ ...prev, [elementId]: file }));
@@ -37,7 +40,7 @@ export const MicrogameCustomizerModal: React.FC<MicrogameCustomizerModalProps> =
         }, {} as { [key: string]: File });
 
         try {
-            await onSave(microgame, variantName, filesToUpload);
+            await onSave(microgame, variantName, filesToUpload, existingVariant || undefined);
             onClose();
         } catch (error) {
             console.error("Failed to save custom microgame:", error);
@@ -48,17 +51,26 @@ export const MicrogameCustomizerModal: React.FC<MicrogameCustomizerModalProps> =
     };
 
     if (!microgame) return null;
+    const modalTitle = existingVariant ? `Edit '${existingVariant.name}'` : `Customize '${microgame.name}'`;
 
     return (
         <div style={styles.modalOverlay}>
             <div style={styles.modalContent}>
-                <div style={styles.modalHeader}><h2>Customize '{microgame.name}'</h2><button onClick={onClose} style={styles.modalCloseButton}>&times;</button></div>
+                <div style={styles.modalHeader}><h2>{modalTitle}</h2><button onClick={onClose} style={styles.modalCloseButton}>&times;</button></div>
                 <div style={styles.modalBody}>
                     <div style={styles.configItem}><label>Variant Name</label><input type="text" value={variantName} onChange={e => setVariantName(e.target.value)} style={styles.input} /></div>
                     <h4 style={{ ...styles.h4, marginTop: '2rem' }}>Skinnable Elements</h4>
+                    <p style={styles.descriptionText}>Upload new assets or leave fields blank to keep existing ones.</p>
                     {(SKINNABLE_ELEMENTS[microgame.id] || []).map(element => (
                         <div style={styles.configItem} key={element.id}>
                             <label>{element.name}</label>
+                            {existingVariant?.skinData[element.id] && (
+                                <p style={{fontSize: '0.8rem', color: '#606770'}}>
+                                    Current: <a href={existingVariant.skinData[element.id].url} target="_blank" rel="noopener noreferrer">
+                                        {existingVariant.skinData[element.id].fileName}
+                                    </a>
+                                </p>
+                            )}
                             <input type="file" accept="image/svg+xml,image/png,image/jpeg" onChange={e => handleFileChange(element.id, e.target.files ? e.target.files[0] : null)} style={styles.input} />
                         </div>
                     ))}

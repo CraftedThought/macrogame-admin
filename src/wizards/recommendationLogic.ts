@@ -4,7 +4,7 @@ import { Microgame } from "../types";
 
 // --- Define Wizard Inputs ---
 export const WIZARD_CONVERSION_GOALS = [
-    'All Conversion Goals',
+    'All',
     'Promote a Single Featured Product',
     'Promote Multiple Featured Products',
     'Promote a Product Line',
@@ -13,7 +13,7 @@ export const WIZARD_CONVERSION_GOALS = [
 ] as const;
 
 export const WIZARD_CUSTOMER_TYPES = [
-    'All Customer Types',
+    'All',
     'Impulse Shopper',
     'Bargain Hunter',
     'Informed Shopper',
@@ -33,7 +33,7 @@ interface RecommendationData {
     compatibleCustomerTypes: WizardCustomerType[];
 }
 
-// --- CORRECTED: The string values in this array now perfectly match the constants above ---
+// --- Data mapping microgame IDs to wizard criteria ---
 export const recommendationData: RecommendationData[] = [
     { id: 'avoid', compatibleGoals: ['Promote a Single Featured Product', 'Promote Multiple Featured Products', 'Push Limited-Time Offer', 'Engage to Convert'], compatibleCustomerTypes: ['Impulse Shopper', 'Window Shopper', 'Indecisive Shopper'] },
     { id: 'build', compatibleGoals: ['Promote a Single Featured Product', 'Push Limited-Time Offer', 'Engage to Convert'], compatibleCustomerTypes: ['Bargain Hunter', 'Informed Shopper', 'Window Shopper', 'Indecisive Shopper'] },
@@ -59,7 +59,6 @@ export const recommendationData: RecommendationData[] = [
     { id: 'vote', compatibleGoals: ['Promote a Single Featured Product', 'Promote a Product Line', 'Push Limited-Time Offer', 'Engage to Convert'], compatibleCustomerTypes: ['Impulse Shopper', 'Indecisive Shopper'] },
 ];
 
-
 interface GenerateOptions {
     goal: WizardConversionGoal;
     customerType: WizardCustomerType;
@@ -71,11 +70,10 @@ interface GenerateOptions {
 export function generateMacrogameFlow({ goal, customerType, tempo, maxLength, allMicrogames }: GenerateOptions): Microgame[] {
     const validMaxLength = Number(maxLength) || 30; // Default to 30s if empty or invalid
 
-    // Start with all microgames and filter down based on selections.
     let candidateGames = allMicrogames;
 
     // Filter by Goal if a specific goal is selected
-    if (goal !== 'All Conversion Goals') {
+    if (goal !== 'All') {
         const matchingGameIds = recommendationData
             .filter(data => data.compatibleGoals.includes(goal))
             .map(data => data.id);
@@ -83,14 +81,10 @@ export function generateMacrogameFlow({ goal, customerType, tempo, maxLength, al
     }
 
     // Filter by Customer Type if a specific type is selected
-    if (customerType !== 'All Customer Types') {
-        // We filter the recommendation data first to get the correct list of IDs
+    if (customerType !== 'All') {
         const matchingGameIds = recommendationData
             .filter(data => data.compatibleCustomerTypes.includes(customerType))
             .map(data => data.id);
-        
-        // Then, we filter our existing candidateGames against this new list of IDs.
-        // This ensures a game must match ALL selected criteria.
         candidateGames = candidateGames.filter(game => matchingGameIds.includes(game.id));
     }
     
@@ -101,7 +95,6 @@ export function generateMacrogameFlow({ goal, customerType, tempo, maxLength, al
     
     if (candidateGames.length === 0) return [];
     
-    // Shuffle candidates to get variety on each generation
     candidateGames.sort(() => Math.random() - 0.5);
     const generatedFlow: Microgame[] = [];
     let currentLength = 0;
@@ -113,7 +106,6 @@ export function generateMacrogameFlow({ goal, customerType, tempo, maxLength, al
         }
     }
     
-    // If the criteria are too strict and result in an empty flow, try to add at least one game.
     if (generatedFlow.length === 0 && candidateGames.length > 0) {
         candidateGames.sort((a, b) => a.length - b.length);
         if (candidateGames[0].length <= validMaxLength) {

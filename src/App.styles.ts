@@ -34,8 +34,14 @@ export const styles: {[key: string]: React.CSSProperties} = {
   flowCardRemoveButton: { position: 'absolute', top: '2px', right: '5px', background: 'none', border: 'none', fontSize: '1.5rem', color: '#999', cursor: 'pointer', padding: '0' },
   staticFlowCard: { fontWeight: 'bold', color: '#606770', borderStyle: 'dashed' },
   flowCardStep: { position: 'absolute', top: '5px', left: '8px', backgroundColor: '#606770', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' },
+  flowCardStepAdd: {
+    width: '50px',
+    borderRadius: '3px'
+  },
   flowCardActions: { position: 'absolute', bottom: '5px', right: '5px', display: 'flex' },
   flowCardButton: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', color: '#606770', padding: '0.2rem' },
+  flowCardArchived: { borderColor: '#e74c3c', backgroundColor: '#fff2f2' },
+  archivedText: { color: '#e74c3c', fontWeight: 'bold', fontSize: '0.8rem', marginTop: '0.25rem'},
   flowArrow: { fontSize: '1.5rem', color: '#606770', fontWeight: 'bold' },
   configContainer: { display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' },
   configRow: { display: 'flex', gap: '1.5rem', alignItems: 'flex-end' },
@@ -45,6 +51,7 @@ export const styles: {[key: string]: React.CSSProperties} = {
   listItemRight: { display: 'flex', alignItems: 'center', gap: '1rem' },
   tag: { backgroundColor: '#e4e6eb', color: '#606770', padding: '0.2rem 0.6rem', borderRadius: '10px', fontSize: '0.8rem' },
   warningTag: { backgroundColor: '#f39c12', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 'bold', marginLeft: '1rem' },
+  inputAlert: { borderColor: '#fd7e14', boxShadow: '0 0 0 2px rgba(253, 126, 20, 0.3)' },
   managerHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' },
   managerList: { display: 'flex', flexDirection: 'column', gap: '1rem' },
   managerActions: { display: 'flex', alignItems: 'center', gap: '1rem' },
@@ -58,7 +65,6 @@ export const styles: {[key: string]: React.CSSProperties} = {
   rewardItem: { display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 0.5rem', borderBottom: '1px solid #f0f0f0' },
   pointsInput: { width: '80px', padding: '0.5rem', marginLeft: 'auto' },
   modalFooter: { display: 'flex', justifyContent: 'flex-end', gap: '1rem', paddingTop: '1rem', marginTop: 'auto', borderTop: '1px solid #eee', padding: '1.5rem 2rem' },
-  rewardsPageLayout: { display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', alignItems: 'start' },
   rewardsListContainer: {},
   rewardsCreateForm: { display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' },
   rewardsListFull: { listStyle: 'none', padding: 0, margin: 0 },
@@ -105,5 +111,89 @@ export const styles: {[key: string]: React.CSSProperties} = {
       backgroundColor: '#2ecc71',
       color: 'white',
       cursor: 'pointer'
+  },
+  cardAddButtonAdded: {
+      padding: '0.5rem 1rem',
+      border: 'none',
+      borderRadius: '4px',
+      backgroundColor: '#27ae60', // A darker green
+      color: 'white',
+      cursor: 'not-allowed'
+  },
+  resetButton: {
+    background: 'none',
+    border: 'none',
+    color: '#0866ff',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+    padding: '0.5rem',
+    marginRight: '1rem'
+  },
+  listHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.5rem 1rem',
+    borderBottom: '1px solid #ddd',
+    backgroundColor: '#f7f7f7',
+  },
+  listHeaderLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  selectAllCheckbox: {
+    marginRight: '0.5rem',
+  },
+  bulkActionsContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  listFooter: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.75rem 1rem',
+    borderTop: '1px solid #ddd',
+    backgroundColor: '#f7f7f7',
+  },
+  filterBarContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '1rem',
+    alignItems: 'center',
+    padding: '1rem',
+    backgroundColor: '#f0f2f5',
+    borderRadius: '6px',
+    marginBottom: '2rem',
+  },
+  filterItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.25rem',
+    flex: 1,
+    minWidth: '150px',
+  },
+  filterLabel: {
+    fontSize: '0.8rem',
+    fontWeight: 'bold',
+    color: '#606770',
+  },
+  itemsPerPageContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  itemsPerPageSelect: {
+    padding: '0.25rem',
+    borderRadius: '4px',
+    border: '1px solid #ccc',
+  },
+  listItemWithCheckbox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
   },
 };

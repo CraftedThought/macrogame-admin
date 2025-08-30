@@ -2,22 +2,25 @@
 
 import { UISkin } from './types';
 
-export const USER_SELECTABLE_CATEGORIES: string[] = ['Cannabis', 'Gaming & Electronics', 'Pet Products'];
+export const USER_SELECTABLE_CATEGORIES: string[] = ['Beauty & Cosmetics', 'Gaming & Electronics', 'Pet Products'];
 
-// NEW: Constant for the "Tempo / Feel" filter dropdown in the creator form.
-// Sourced from the 'tempo' metadata field on each microgame.
 export const TEMPO_OPTIONS = ['All', 'Fast', 'Normal', 'Slow'];
 
-// NEW: Constant for the "Length" filter dropdown in the creator form.
 export const LENGTH_OPTIONS = ['All', 'Short', 'Medium', 'Long'];
 
-// NEW: Defines the logic for what each length category means in seconds.
-// This allows for easy adjustment of these ranges in the future.
 export const LENGTH_DEFINITIONS: { [key: string]: (len: number) => boolean } = {
     'Short': (len: number) => len <= 5,
     'Medium': (len: number) => len > 5 && len < 8,
     'Long': (len: number) => len >= 8,
 };
+
+// --- NEW FILTERS FOR MACROGAME MANAGER ---
+export const MACROGAME_LENGTH_OPTIONS = ['All', 'Short (< 20s)', 'Medium (20s-30s)', 'Long (> 30s)'];
+export const NUMBER_OF_GAMES_OPTIONS = ['All', '1', '2', '3', '4+'];
+export const NUMBER_OF_REWARDS_OPTIONS = ['All', '1', '2', '3', '4', '5+'];
+export const YES_NO_ALL_OPTIONS = ['All', 'Yes', 'No'];
+export const REWARD_TYPES_OPTIONS = ['All', 'percentage_discount', 'fixed_discount', 'free_shipping'];
+// --- END NEW FILTERS ---
 
 export const SKINNABLE_ELEMENTS: { [key: string]: { id: string, name: string }[] } = {
     'avoid': [

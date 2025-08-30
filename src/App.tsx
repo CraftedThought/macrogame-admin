@@ -22,10 +22,10 @@ export default function App() {
     const [currentPage, setCurrentPage] = useState<CurrentPage>({ page: 'creator' });
     const [editingMacrogame, setEditingMacrogame] = useState<Macrogame | null>(null);
     const [editingPopup, setEditingPopup] = useState<Popup | null>(null);
-    const [customizingMicrogame, setCustomizingMicrogame] = useState<Microgame | null>(null);
+    const [customizingMicrogame, setCustomizingMicrogame] = useState<{ baseGame: Microgame, variant?: CustomMicrogame } | null>(null);
     const [isWizardOpen, setIsWizardOpen] = useState(false); // <-- ADDED WIZARD STATE
 
-    const { updateMacrogame, updatePopup, saveCustomMicrogame, createPopup } = useData();
+    const { macrogames, updateMacrogame, updatePopup, saveCustomMicrogame, createPopup } = useData();
 
     const handleDeployMacrogame = async (macrogame: Macrogame) => {
         const newPopup: Omit<Popup, 'id'> = {
@@ -69,9 +69,11 @@ export default function App() {
                 onClose={() => setEditingPopup(null)}
                 popup={editingPopup}
                 onSave={updatePopup}
+                macrogames={macrogames}
             />
             <MicrogameCustomizerModal
-                microgame={customizingMicrogame}
+                microgame={customizingMicrogame?.baseGame || null}
+                existingVariant={customizingMicrogame?.variant || null}
                 onClose={() => setCustomizingMicrogame(null)}
                 onSave={saveCustomMicrogame}
             />
@@ -81,7 +83,7 @@ export default function App() {
             </header>
             <main style={styles.main}>
                 {currentPage.page === 'creator' && <MacrogameCreator setCurrentPage={setCurrentPage} onLaunchWizard={() => setIsWizardOpen(true)} />}
-                {currentPage.page === 'manager' && <MacrogamesManager handleDeployMacrogame={handleDeployMacrogame} handleEditMacrogame={setEditingMacrogame} />}
+                {currentPage.page === 'manager' && <MacrogamesManager handleDeployMacrogame={handleDeployMacrogame} handleEditMacrogame={setEditingMacrogame} setCurrentPage={setCurrentPage} />}
                 {currentPage.page === 'microgames' && <MicrogamesPage onCustomize={setCustomizingMicrogame} />}
                 {currentPage.page === 'popups' && <PopupManager handleEditPopup={setEditingPopup} />}
                 {currentPage.page === 'rewards' && <RewardsPage />}

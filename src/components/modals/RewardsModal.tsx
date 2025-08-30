@@ -1,3 +1,5 @@
+// src/components/modals/RewardsModal.tsx
+
 import React, { useState, useEffect } from 'react';
 import { styles } from '../../App.styles';
 import { Macrogame, Reward, CurrentPage } from '../../types';
@@ -12,11 +14,16 @@ interface RewardsModalProps {
 }
 
 export const RewardsModal: React.FC<RewardsModalProps> = ({ isOpen, onClose, existingRewards, allRewards, onSave, setCurrentPage }) => {
-    const [rewards, setRewards] = useState(existingRewards);
+    const [rewards, setRewards] = useState<Macrogame['rewards']>([]);
 
     useEffect(() => {
-        setRewards(existingRewards);
-    }, [existingRewards, isOpen]);
+        if (isOpen) {
+            // Filter out any rewards that are in the macrogame but no longer in the master `allRewards` list
+            const allRewardIds = new Set(allRewards.map(r => r.id));
+            const validExistingRewards = (existingRewards || []).filter(r => allRewardIds.has(r.rewardId));
+            setRewards(validExistingRewards);
+        }
+    }, [existingRewards, allRewards, isOpen]);
 
     const handlePointChange = (rewardId: string, points: string) => {
         const numericPoints = points === '' ? 0 : Number(points);

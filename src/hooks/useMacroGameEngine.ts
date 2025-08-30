@@ -6,10 +6,7 @@ import { Macrogame, Reward, Microgame as MicrogameData, MicrogameResult } from '
 const WIN_SOUND_SRC = '/sounds/success.wav';
 const LOSE_SOUND_SRC = '/sounds/lose.wav';
 
-// The useMacroGameEngine hook encapsulates all logic for running a macrogame sequence.
 export const useMacroGameEngine = (macrogame?: Macrogame, allRewards?: Reward[]) => {
-  // The 'view' state determines which screen is currently visible to the user.
-  // NEW: Added 'promo' to the list of possible views.
   const [view, setView] = useState<'loading' | 'intro' | 'title' | 'controls' | 'game' | 'result' | 'promo' | 'end'>('loading');
   const [points, setPoints] = useState(0);
   const [activeGameData, setActiveGameData] = useState<MicrogameData | null>(null);
@@ -18,6 +15,41 @@ export const useMacroGameEngine = (macrogame?: Macrogame, allRewards?: Reward[])
   
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
   const gameIndexRef = useRef(0);
+
+  const runFlow = useCallback(async () => {
+    if (!macrogame) return;
+    if (gameIndexRef.current >= macrogame.flow.length) {
+      if (macrogame.promoScreen?.enabled) {
+        setView('promo');
+      } else {
+        audioRef.current.bg?.pause();
+        setView('end');
+      }
+      return;
+    }
+
+    const gameFlow = macrogame.flow as unknown as MicrogameData[];
+    const gameData = gameFlow[gameIndexRef.current];
+    setActiveGameData(gameData);
+    setView('title');
+    await new Promise(resolve => setTimeout(resolve, macrogame.config.titleScreenDuration));
+    setView('controls');
+    await new Promise(resolve => setTimeout(resolve, macrogame.config.controlsScreenDuration));
+    setView('game');
+  }, [macrogame]);
+  
+  const advanceFromIntro = useCallback(() => {
+    if (view === 'intro') {
+        runFlow();
+    }
+  }, [view, runFlow]);
+
+  const advanceFromPromo = useCallback(() => {
+    if (view === 'promo') {
+      audioRef.current.bg?.pause();
+      setView('end');
+    }
+  }, [view]);
 
   const onGameEnd = useCallback((gameResult: MicrogameResult) => {
     setResult(gameResult);
@@ -31,50 +63,30 @@ export const useMacroGameEngine = (macrogame?: Macrogame, allRewards?: Reward[])
     setView('result');
   }, []);
 
-  const runFlow = useCallback(async () => {
-    if (!macrogame) return;
-
-    // Check if we've finished all microgames.
-    if (gameIndexRef.current >= macrogame.flow.length) {
-      // NEW (Req 4): Before ending, check if there's an enabled promo screen.
-      if (macrogame.promoScreen?.enabled) {
-        setView('promo');
-      } else {
-        audioRef.current.bg?.pause();
-        setView('end'); // If no promo screen, go directly to the end/rewards screen.
-      }
-      return;
-    }
-
-    const gameFlow = macrogame.flow as unknown as MicrogameData[];
-    const gameData = gameFlow[gameIndexRef.current];
-    setActiveGameData(gameData);
-    
-    setView('title');
-    await new Promise(resolve => setTimeout(resolve, macrogame.config.titleScreenDuration));
-    
-    setView('controls');
-    await new Promise(resolve => setTimeout(resolve, macrogame.config.controlsScreenDuration));
-    
-    setView('game');
-  }, [macrogame]);
-
   useEffect(() => {
     if (view === 'result') {
       const timer = setTimeout(() => { runFlow(); }, 1500);
       return () => clearTimeout(timer);
     }
-    // NEW (Req 4): Handle transition away from the promo screen.
-    // NOTE: This currently only handles the timed duration. 'Click to continue' would require an additional callback.
+
+    if (view === 'intro' && macrogame?.introScreen.enabled) {
+        if (macrogame.introScreen.clickToContinue) {
+            return; // Wait for user to click
+        }
+        const introDuration = (macrogame.introScreen.duration || 3) * 1000;
+        const timer = setTimeout(() => advanceFromIntro(), introDuration);
+        return () => clearTimeout(timer);
+    }
+
     if (view === 'promo' && macrogame?.promoScreen?.enabled) {
+      if (macrogame.promoScreen.clickToContinue) {
+        return; 
+      }
       const promoDuration = (macrogame.promoScreen.duration || 5) * 1000;
-      const timer = setTimeout(() => {
-        audioRef.current.bg?.pause();
-        setView('end');
-      }, promoDuration);
+      const timer = setTimeout(() => advanceFromPromo(), promoDuration);
       return () => clearTimeout(timer);
     }
-  }, [view, runFlow, macrogame]);
+  }, [view, runFlow, macrogame, advanceFromIntro, advanceFromPromo]);
   
   useEffect(() => {
       const bgAudio = audioRef.current.bg;
@@ -97,14 +109,12 @@ export const useMacroGameEngine = (macrogame?: Macrogame, allRewards?: Reward[])
     audioRef.current.win = new Audio(WIN_SOUND_SRC);
     audioRef.current.lose = new Audio(LOSE_SOUND_SRC);
     
-    // NEW (Req 3 & 5): Only show the intro screen if it's enabled in the config.
-    if (macrogame.config.showIntroScreen) {
+    if (macrogame.introScreen.enabled) {
       setView('intro');
-      await new Promise(resolve => setTimeout(resolve, macrogame.config.introScreenDuration));
+    } else {
+        runFlow();
     }
-    
-    runFlow();
   }, [macrogame, runFlow]);
 
-  return { view, points, result, activeGameData, macrogame, allRewards, start, onGameEnd, isMuted, toggleMute };
+  return { view, points, result, activeGameData, macrogame, allRewards, start, onGameEnd, isMuted, toggleMute, advanceFromIntro, advanceFromPromo };
 };

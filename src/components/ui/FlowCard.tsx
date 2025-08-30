@@ -1,3 +1,5 @@
+// src/components/ui/FlowCard.tsx
+
 import React from 'react';
 import { styles } from '../../App.styles';
 import { Microgame, CustomMicrogame } from '../../types';
@@ -13,12 +15,19 @@ interface FlowCardProps {
 }
 
 export const FlowCard: React.FC<FlowCardProps> = ({ flowItem, index, onMove, onDuplicate, onRemove, isFirst, isLast }) => {
+    const isArchived = flowItem.baseGame.isActive === false;
     const displayName = flowItem.customVariant ? `${flowItem.baseGame.name} (${flowItem.customVariant.name})` : flowItem.baseGame.name;
+    
+    const cardStyle = isArchived
+        ? { ...styles.flowCard, ...styles.flowCardArchived }
+        : styles.flowCard;
+
     return (
-        <div style={{ ...styles.flowCard }}>
+        <div style={cardStyle}>
             <div style={styles.flowCardStep}>{index + 1}</div>
             <button title="Remove" onClick={onRemove} style={styles.flowCardRemoveButton}>&times;</button>
             <span>{displayName}</span>
+            {isArchived && <span style={styles.archivedText}>(Archived)</span>}
             <div style={styles.flowCardActions}>
                 <button title="Duplicate" onClick={onDuplicate} style={styles.flowCardButton}>❐</button>
                 <button title="Move Up" disabled={isFirst} onClick={() => onMove('up')} style={styles.flowCardButton}>▲</button>

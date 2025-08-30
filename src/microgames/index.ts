@@ -1,27 +1,30 @@
-/// src/microgames/index.ts
+// src/microgames/index.ts
 
-import AvoidGame from './avoid';
-import BuildGame from './build';
-import CatchGame from './catch';
-import ClawGame from './claw';
-import CleanGame from './clean';
-import CollectGame from './collect';
-import ConsumeGame from './consume';
-import DropGame from './drop';
-import EscapeGame from './escape';
-import FrameGame from './frame';
-import GrabGame from './grab';
-import GrowGame from './grow';
-import LikeGame from './like';
-import LineUpGame from './lineup';
-import MatchGame from './match';
-import MatchUpGame from './matchup';
-import OrganizeGame from './organize';
-import PackageGame from './package';
-import PopGame from './pop';
-import SpotGame from './spot';
-import TradeGame from './trade';
-import VoteGame from './vote';
+import React from 'react';
+
+// Use React.lazy for dynamic imports. This allows for code-splitting.
+const AvoidGame = React.lazy(() => import('./avoid'));
+const BuildGame = React.lazy(() => import('./build'));
+const CatchGame = React.lazy(() => import('./catch'));
+const ClawGame = React.lazy(() => import('./claw'));
+const CleanGame = React.lazy(() => import('./clean'));
+const CollectGame = React.lazy(() => import('./collect'));
+const ConsumeGame = React.lazy(() => import('./consume'));
+const DropGame = React.lazy(() => import('./drop'));
+const EscapeGame = React.lazy(() => import('./escape'));
+const FrameGame = React.lazy(() => import('./frame'));
+const GrabGame = React.lazy(() => import('./grab'));
+const GrowGame = React.lazy(() => import('./grow'));
+const LikeGame = React.lazy(() => import('./like'));
+const LineUpGame = React.lazy(() => import('./lineup'));
+const MatchGame = React.lazy(() => import('./match'));
+const MatchUpGame = React.lazy(() => import('./matchup'));
+const OrganizeGame = React.lazy(() => import('./organize'));
+const PackageGame = React.lazy(() => import('./package'));
+const PopGame = React.lazy(() => import('./pop'));
+const SpotGame = React.lazy(() => import('./spot'));
+const TradeGame = React.lazy(() => import('./trade'));
+const VoteGame = React.lazy(() => import('./vote'));
 
 export const microgames: { [key: string]: React.FC<any> } = {
   avoid: AvoidGame,
