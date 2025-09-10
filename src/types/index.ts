@@ -5,14 +5,14 @@ export interface UISkin {
   id: string;
   name: string;
   fontFamily: string;
-  fontUrl?: string; // Optional URL for custom fonts
+  fontUrl?: string;
 }
 
 // A reusable config for screens like Intro and Promo.
 export interface ScreenConfig {
   enabled: boolean;
   text: string;
-  duration: number; // Duration in seconds
+  duration: number; // in seconds
   backgroundImageUrl?: string;
   clickToContinue: boolean;
 }
@@ -27,7 +27,7 @@ export interface MacrogameConfig {
 // Represents a single microgame within the flow of a macrogame.
 export interface MacrogameFlowItem {
   microgameId: string;
-  variantId: string | null; // ID of a custom microgame variant, if used
+  variantId: string | null;
   order: number;
 }
 
@@ -73,11 +73,11 @@ export interface CustomMicrogame {
     skinData: { [key: string]: { url: string; fileName: string } };
 }
 
-// Defines the schedule for when a popup can appear.
-export interface PopupSchedule {
-  days: { [key: string]: boolean }; // e.g., { monday: true, ... }
-  startTime: string; // e.g., "09:00"
-  endTime: string;   // e.g., "17:00"
+// Defines the schedule for when a popup or campaign can appear.
+export interface Schedule {
+  days: { [key: string]: boolean };
+  startTime: string; // "09:00"
+  endTime: string;   // "17:00"
   timezone: string;
 }
 
@@ -95,10 +95,26 @@ export interface Popup {
   title?: string;
   subtitle?: string;
   colorScheme?: string;
-  trigger?: 'exit_intent' | 'timed' | 'scroll';
-  audience?: 'all_visitors' | 'new_visitors' | 'returning_visitors';
-  schedule?: PopupSchedule;
-  isFavorite?: boolean; // This is the intended addition
+  isFavorite?: boolean;
+  campaignId?: string | null; // Link back to the campaign
+}
+
+export interface DisplayRule {
+  id: string; // A unique identifier for the rule (e.g., a UUID)
+  name: string; // e.g., "Weekday Mornings for New Visitors"
+  trigger: 'exit_intent' | 'timed' | 'scroll';
+  audience: 'all_visitors' | 'new_visitors' | 'returning_visitors';
+  schedule: Schedule;
+  popups: { popupId: string; weight: number; }[];
+}
+
+export interface Campaign {
+  id: string;
+  name: string;
+  status: 'Draft' | 'Active' | 'Paused';
+  createdAt: string;
+  goal: string;
+  displayRules: DisplayRule[];
 }
 
 // Data for a single reward that can be earned.
@@ -112,10 +128,8 @@ export interface Reward {
   redemptions: number;
   conversionRate: number;
   appliesTo?: 'entire_order' | 'specific_products' | 'specific_collections';
-  minimumPurchaseAmount?: number;
+  minimumPurchaseAmount?: number | null;
   limitToOneUsePerCustomer?: boolean;
-  startDate?: string;
-  endDate?: string;
 }
 
 // The result of a single microgame play.
@@ -132,5 +146,5 @@ export interface MicrogameProps {
 
 // Represents the currently active page in the main App component.
 export interface CurrentPage {
-  page: 'creator' | 'manager' | 'popups' | 'microgames' | 'rewards';
+  page: 'creator' | 'manager' | 'popups' | 'microgames' | 'rewards' | 'campaigns';
 }

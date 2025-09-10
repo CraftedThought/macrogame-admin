@@ -46,7 +46,7 @@ export const styles: {[key: string]: React.CSSProperties} = {
   configContainer: { display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' },
   configRow: { display: 'flex', gap: '1.5rem', alignItems: 'flex-end' },
   configItem: { display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 },
-  createButton: { backgroundColor: '#0866ff', color: 'white', border: 'none', padding: '1rem 2rem', borderRadius: '6px', fontSize: '1.1rem', cursor: 'pointer', marginTop: '2rem', fontWeight: 'bold' },
+  createButton: { backgroundColor: '#0866ff', color: 'white', border: 'none', padding: '1rem 2rem', borderRadius: '6px', fontSize: '1.1rem', cursor: 'pointer', marginTop: '2rem', marginBottom: '2rem', fontWeight: 'bold' },
   listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', padding: '1rem', borderRadius: '6px', marginBottom: '1rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' },
   listItemRight: { display: 'flex', alignItems: 'center', gap: '1rem' },
   tag: { backgroundColor: '#e4e6eb', color: '#606770', padding: '0.2rem 0.6rem', borderRadius: '10px', fontSize: '0.8rem' },
@@ -195,5 +195,11 @@ export const styles: {[key: string]: React.CSSProperties} = {
     display: 'flex',
     alignItems: 'center',
     gap: '1rem',
+  },
+  filterContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.5rem', // This will create the space between the search and filter sections
+    marginBottom: '2rem',
   },
 };

@@ -125,12 +125,12 @@ export const MicrogamesPage: React.FC<MicrogamesPageProps> = ({ onCustomize }) =
     };
     
     const renderCustomGroup = (group: { baseName: string, variants: CustomMicrogame[], id: string }, isSelected: boolean, onToggleSelect: () => void) => (
-        <div style={{...styles.listItem, ...styles.listItemWithCheckbox}}>
-            <input type="checkbox" checked={isSelected} onChange={onToggleSelect} />
+        <li key={group.id} style={{ ...styles.rewardListItem, ...styles.listItemWithCheckbox, paddingLeft: 0, paddingRight: 0 }}>
+            <input type="checkbox" checked={isSelected} onChange={onToggleSelect} style={{marginLeft: '1rem'}} />
             <div style={{flex: 1}}>
-                <GroupedCustomGames key={group.baseName} groupName={group.baseName} variants={group.variants} onEdit={handleEditCustom} onDelete={deleteCustomMicrogame} />
+                <GroupedCustomGames groupName={group.baseName} variants={group.variants} onEdit={handleEditCustom} onDelete={deleteCustomMicrogame} />
             </div>
-        </div>
+        </li>
     );
 
     const filterConfig: FilterConfig[] = [
@@ -144,14 +144,17 @@ export const MicrogamesPage: React.FC<MicrogamesPageProps> = ({ onCustomize }) =
         <div style={styles.creatorSection}>
             <div style={styles.managerHeader}><h2 style={styles.h2}>Microgame Library</h2></div>
             
-            <div style={{...styles.formRow, marginBottom: '1rem'}}>
-                 <input
-                    type="text"
-                    placeholder="Search library by name..."
-                    value={filters.searchTerm}
-                    onChange={e => handleFilterChange('searchTerm', e.target.value)}
-                    style={styles.input}
-                />
+            <div style={{...styles.filterContainer, marginBottom: '1rem'}}>
+                <div style={styles.configItem}>
+                    <label>Search Microgames</label>
+                    <input
+                        type="text"
+                        placeholder="Search by name..."
+                        value={filters.searchTerm}
+                        onChange={e => handleFilterChange('searchTerm', e.target.value)}
+                        style={styles.input}
+                    />
+                </div>
             </div>
 
             <FilterBar filters={filterConfig} filterValues={filters} onFilterChange={handleFilterChange} onResetFilters={handleResetFilters} />

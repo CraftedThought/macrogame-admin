@@ -171,17 +171,19 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
                 <button onClick={() => setCurrentPage({ page: 'creator' })} style={styles.saveButton}>Create New</button>
             </div>
             
-            <div style={{...styles.formRow, marginBottom: '1rem'}}>
-                <input
-                    type="text"
-                    placeholder="Search macrogames by name..."
-                    value={filters.searchTerm}
-                    onChange={e => handleFilterChange('searchTerm', e.target.value)}
-                    style={styles.input}
-                />
+            <div style={styles.filterContainer}>
+                <div style={styles.configItem}>
+                    <label>Search Macrogames</label>
+                    <input
+                        type="text"
+                        placeholder="Search by name..."
+                        value={filters.searchTerm}
+                        onChange={e => handleFilterChange('searchTerm', e.target.value)}
+                        style={styles.input}
+                    />
+                </div>
+                <FilterBar filters={filterConfig} filterValues={filters} onFilterChange={handleFilterChange} onResetFilters={handleResetFilters} />
             </div>
-
-            <FilterBar filters={filterConfig} filterValues={filters} onFilterChange={handleFilterChange} onResetFilters={handleResetFilters} />
 
             {favoriteGames.length > 0 && (
                  <>

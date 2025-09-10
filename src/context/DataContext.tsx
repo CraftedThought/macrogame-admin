@@ -7,7 +7,7 @@ import {
     deleteDoc, DocumentData, setDoc, writeBatch, getDocs, where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
-import { Macrogame, Microgame, Popup, Reward, CustomMicrogame } from '../types';
+import { Macrogame, Microgame, Popup, Reward, CustomMicrogame, Campaign } from '../types';
 import { seedMicrogames } from '../scripts/seedDatabase';
 
 // Helper function to generate a unique name for duplicated items
@@ -26,9 +26,17 @@ const generateUniqueName = (name: string, existingNames: Set<string>): string =>
 interface DataContextType {
     macrogames: Macrogame[];
     popups: Popup[];
+    campaigns: Campaign[];
     allRewards: Reward[];
     allMicrogames: Microgame[];
     customMicrogames: CustomMicrogame[];
+    // Campaign Functions
+    createCampaign: (newCampaign: Omit<Campaign, 'id'>) => Promise<void>;
+    updateCampaign: (campaignId: string, dataToUpdate: Partial<Campaign>) => Promise<void>;
+    updateCampaignStatus: (campaignId: string, status: Campaign['status']) => Promise<void>;
+    deleteCampaign: (campaignId: string) => Promise<void>;
+    duplicateCampaign: (campaignToDuplicate: Campaign) => Promise<void>;
+    // Other Functions...
     createMacrogame: (newMacrogame: Omit<Macrogame, 'id' | 'type'> & { id: string | null }) => Promise<void>;
     updateMacrogame: (updatedMacrogame: Omit<Macrogame, 'id' | 'type'> & { id: string | null }) => Promise<void>;
     deleteMacrogame: (id: string) => Promise<void>;
@@ -56,6 +64,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [macrogames, setMacrogames] = useState<Macrogame[]>([]);
     const [popups, setPopups] = useState<Popup[]>([]);
+    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [allRewards, setAllRewards] = useState<Reward[]>([]);
     const [allMicrogames, setAllMicrogames] = useState<Microgame[]>([]);
     const [customMicrogames, setCustomMicrogames] = useState<CustomMicrogame[]>([]);
@@ -65,6 +74,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const unsubMacrogames = onSnapshot(query(collection(db, 'macrogames')), snap => setMacrogames(snap.docs.map(doc => ({ ...doc.data() as Omit<Macrogame, 'id'>, id: doc.id }))));
         const unsubPopups = onSnapshot(query(collection(db, 'popups')), snap => setPopups(snap.docs.map(doc => ({ ...doc.data() as Omit<Popup, 'id'>, id: doc.id }))));
+        const unsubCampaigns = onSnapshot(query(collection(db, 'campaigns')), snap => setCampaigns(snap.docs.map(doc => ({ ...doc.data() as Omit<Campaign, 'id'>, id: doc.id }))));
         const unsubRewards = onSnapshot(query(collection(db, 'rewards')), snap => setAllRewards(snap.docs.map(doc => ({ ...doc.data() as Omit<Reward, 'id'>, id: doc.id }))));
         const unsubMicrogames = onSnapshot(query(collection(db, 'microgames')), snap => setAllMicrogames(snap.docs.map(doc => ({ ...doc.data() as Microgame, id: doc.id }))));
         const unsubCustomMicrogames = onSnapshot(query(collection(db, 'customMicrogames')), snap => { setCustomMicrogames(snap.docs.map(doc => ({ ...doc.data() as Omit<CustomMicrogame, 'id'>, id: doc.id }))); });
@@ -72,11 +82,70 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return () => {
             unsubMacrogames();
             unsubPopups();
+            unsubCampaigns();
             unsubRewards();
             unsubMicrogames();
             unsubCustomMicrogames();
         };
     }, []);
+    
+    // --- Campaign Functions ---
+    const createCampaign = async (newCampaign: Omit<Campaign, 'id'>) => {
+        const docRef = await addDoc(collection(db, 'campaigns'), newCampaign);
+        const campaignId = docRef.id;
+
+        // After creating, link all popups in its display rules
+        const batch = writeBatch(db);
+        newCampaign.displayRules.forEach(rule => {
+            rule.popups.forEach(p => {
+                const popupRef = doc(db, 'popups', p.popupId);
+                batch.update(popupRef, { campaignId: campaignId });
+            });
+        });
+        await batch.commit();
+    };
+    const updateCampaign = async (campaignId: string, dataToUpdate: Partial<Campaign>) => {
+        const campaignRef = doc(db, 'campaigns', campaignId);
+
+        // Unlink popups that are no longer in this campaign
+        const oldPopupsQuery = query(collection(db, 'popups'), where('campaignId', '==', campaignId));
+        const oldPopupsSnap = await getDocs(oldPopupsQuery);
+        const newPopupIds = new Set(dataToUpdate.displayRules?.flatMap(rule => rule.popups.map(p => p.popupId)) || []);
+
+        const batch = writeBatch(db);
+        oldPopupsSnap.forEach(popupDoc => {
+            if (!newPopupIds.has(popupDoc.id)) {
+                batch.update(popupDoc.ref, { campaignId: null });
+            }
+        });
+
+        // Link new popups
+        newPopupIds.forEach(popupId => {
+            const popupRef = doc(db, 'popups', popupId);
+            batch.update(popupRef, { campaignId: campaignId });
+        });
+
+        // Update the campaign doc itself
+        batch.update(campaignRef, dataToUpdate);
+
+        await batch.commit();
+    };
+    const updateCampaignStatus = async (campaignId: string, status: Campaign['status']) => {
+        await updateDoc(doc(db, 'campaigns', campaignId), { status });
+    };
+    const deleteCampaign = async (campaignId: string) => {
+        if (window.confirm("Are you sure? This will not delete the popups inside, but they will become unassigned.")) {
+            // TODO: In the future, clean up campaignId from popups within this campaign
+            await deleteDoc(doc(db, 'campaigns', campaignId));
+        }
+    };
+    const duplicateCampaign = async (campaignToDuplicate: Campaign) => {
+        const { id, name, ...rest } = campaignToDuplicate;
+        const existingNames = new Set(campaigns.map(c => c.name));
+        const newName = generateUniqueName(name, existingNames);
+        const newData = { ...rest, name: newName, createdAt: new Date().toISOString(), status: 'Draft' as const };
+        await addDoc(collection(db, 'campaigns'), newData);
+    };
 
     // --- Macrogame Functions ---
     const createMacrogame = async (newMacrogame: Omit<Macrogame, 'id' | 'type'> & { id: string | null }) => {
@@ -244,7 +313,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const value = {
-        macrogames, popups, allRewards, allMicrogames, customMicrogames,
+        macrogames, popups, campaigns, allRewards, allMicrogames, customMicrogames,
         createMacrogame, updateMacrogame, deleteMacrogame, deleteMultipleMacrogames,
         duplicateMacrogame, toggleMacrogameFavorite,
         createPopup, deletePopup, deleteMultiplePopups, updatePopup,
@@ -252,6 +321,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         saveCustomMicrogame, toggleMicrogameFavorite, deleteCustomMicrogame,
         createReward, updateReward, deleteReward, deleteMultipleRewards,
         duplicateReward,
+        createCampaign, updateCampaign, updateCampaignStatus, deleteCampaign, duplicateCampaign
     };
 
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

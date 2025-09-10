@@ -2,18 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { styles } from '../../App.styles';
-import { Popup, PopupSchedule, Macrogame } from '../../types';
+import { Popup, Macrogame } from '../../types';
 import { UI_SKINS, SKIN_COLOR_SCHEMES } from '../../constants';
-import { ScheduleInput } from '../ui/ScheduleInput';
 import { useData } from '../../context/DataContext';
-import { hasMacrogameIssues } from '../../utils/helpers'; // Import our new helper
-
-const getDefaultSchedule = (): PopupSchedule => ({
-    days: { monday: false, tuesday: false, wednesday: false, thursday: false, friday: false, saturday: false, sunday: false },
-    startTime: '00:00',
-    endTime: '23:59',
-    timezone: 'America/New_York',
-});
+import { hasMacrogameIssues } from '../../utils/helpers';
 
 interface PopupEditorModalProps {
     isOpen: boolean;
@@ -24,31 +16,25 @@ interface PopupEditorModalProps {
 }
 
 export const PopupEditorModal: React.FC<PopupEditorModalProps> = ({ isOpen, onClose, popup, onSave, macrogames }) => {
-    const { allMicrogames } = useData(); // Get all microgames to check for issues
+    const { allMicrogames } = useData();
     const [name, setName] = useState('');
     const [macrogameId, setMacrogameId] = useState('');
     const [skinId, setSkinId] = useState('');
     const [title, setTitle] = useState('');
     const [subtitle, setSubtitle] = useState('');
     const [colorScheme, setColorScheme] = useState('');
-    const [trigger, setTrigger] = useState('exit_intent');
-    const [audience, setAudience] = useState('all_visitors');
-    const [schedule, setSchedule] = useState<PopupSchedule>(getDefaultSchedule());
 
     useEffect(() => {
         if (popup) {
             const initialSkinId = popup.skinId || '';
-            
             const macrogameExists = macrogames.some(mg => mg.id === popup.macrogameId);
+
             setMacrogameId(macrogameExists ? popup.macrogameId : '');
-            
             setName(popup.name || '');
             setSkinId(initialSkinId);
             setTitle(popup.title || '');
             setSubtitle(popup.subtitle || '');
-            setTrigger(popup.trigger || 'exit_intent');
-            setAudience(popup.audience || 'all_visitors');
-            setSchedule(popup.schedule || getDefaultSchedule());
+            
             if (initialSkinId && SKIN_COLOR_SCHEMES[initialSkinId]) {
                 const defaultColorScheme = Object.keys(SKIN_COLOR_SCHEMES[initialSkinId])[0];
                 setColorScheme(popup.colorScheme || defaultColorScheme);
@@ -69,6 +55,7 @@ export const PopupEditorModal: React.FC<PopupEditorModalProps> = ({ isOpen, onCl
     };
 
     const handleSave = () => {
+        if (!popup) return;
         if (!macrogameId) {
             alert('Please select a macrogame for the popup.');
             return;
@@ -82,11 +69,8 @@ export const PopupEditorModal: React.FC<PopupEditorModalProps> = ({ isOpen, onCl
             title, 
             subtitle, 
             colorScheme, 
-            trigger, 
-            audience, 
-            schedule 
         };
-        onSave(popup!.id, updatedData).then(onClose);
+        onSave(popup.id, updatedData).then(onClose);
     };
 
     if (!isOpen || !popup) return null;
@@ -104,6 +88,7 @@ export const PopupEditorModal: React.FC<PopupEditorModalProps> = ({ isOpen, onCl
                 </div>
                 <div style={styles.modalBody}>
                     <div style={styles.configItem}><label>Popup Name</label><input type="text" value={name} onChange={e => setName(e.target.value)} style={styles.input} /></div>
+                    
                     <div style={{...styles.configItem, marginTop: '1rem'}}>
                         <label>Macrogame</label>
                         <select value={macrogameId} onChange={e => setMacrogameId(e.target.value)} style={macrogameSelectStyle}>
@@ -111,7 +96,6 @@ export const PopupEditorModal: React.FC<PopupEditorModalProps> = ({ isOpen, onCl
                             {macrogames.map(game => {
                                 const hasIssues = hasMacrogameIssues(game, allMicrogames);
                                 const isDisabled = hasIssues && game.id !== macrogameId;
-
                                 return (
                                     <option key={game.id} value={game.id} disabled={isDisabled} style={{ color: hasIssues ? '#999' : 'inherit' }}>
                                         {hasIssues ? '⚠️ ' : ''}{game.name}
@@ -120,15 +104,20 @@ export const PopupEditorModal: React.FC<PopupEditorModalProps> = ({ isOpen, onCl
                             })}
                         </select>
                     </div>
-                    <div style={{...styles.configItem, marginTop: '1rem'}}><label>Popup UI Skin</label><select value={skinId} onChange={e => handleSkinChange(e.target.value)} style={styles.input}><option value="">Select a Popup Skin...</option>{UI_SKINS.map(skin => <option key={skin.id} value={skin.id}>{skin.name}</option>)}</select></div>
+
+                    <div style={{...styles.configItem, marginTop: '1rem'}}>
+                        <label>Popup UI Skin</label>
+                        <select value={skinId} onChange={e => handleSkinChange(e.target.value)} style={styles.input}>
+                            <option value="">Select a Popup Skin...</option>
+                            {UI_SKINS.map(skin => <option key={skin.id} value={skin.id}>{skin.name}</option>)}
+                        </select>
+                    </div>
+
                     {skinId && SKIN_COLOR_SCHEMES[skinId] && (
                         <div style={styles.configSection}>
                             <div style={styles.configItem}><label>Title</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} style={styles.input} placeholder="e.g., Special Offer!" /></div>
                             <div style={styles.configItem}><label>Subtitle</label><input type="text" value={subtitle} onChange={e => setSubtitle(e.target.value)} style={styles.input} placeholder="e.g., Play to win a prize" /></div>
                             <div style={styles.configItem}><label>Color Scheme</label><select value={colorScheme} onChange={e => setColorScheme(e.target.value)} style={styles.input}>{Object.entries(SKIN_COLOR_SCHEMES[skinId]).map(([id, name]) => (<option key={id} value={id}>{name}</option>))}</select></div>
-                            <div style={styles.configItem}><label>Trigger</label><select value={trigger} onChange={e => setTrigger(e.target.value)} style={styles.input}><option value="exit_intent">On Exit Intent</option></select></div>
-                            <div style={styles.configItem}><label>Audience</label><select value={audience} onChange={e => setAudience(e.target.value)} style={styles.input}><option value="all_visitors">All Visitors</option></select></div>
-                            <div style={styles.configItem}><label>Schedule</label><ScheduleInput schedule={schedule} onChange={setSchedule} /></div>
                         </div>
                     )}
                 </div>

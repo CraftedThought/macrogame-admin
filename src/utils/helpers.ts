@@ -17,3 +17,10 @@ export const hasMacrogameIssues = (macrogame: Macrogame, allMicrogames: Microgam
     return !gameData || gameData.isActive === false;
   });
 };
+/**
+ * Generates a standard RFC 4122 version 4 UUID.
+ * @returns {string} A new unique identifier.
+ */
+export const generateUUID = (): string => {
+  return crypto.randomUUID();
+};

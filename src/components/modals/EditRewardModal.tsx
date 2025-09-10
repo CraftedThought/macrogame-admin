@@ -31,8 +31,6 @@ export const EditRewardModal: React.FC<EditRewardModalProps> = ({ isOpen, onClos
                 appliesTo: reward.appliesTo || 'entire_order',
                 minimumPurchaseAmount: reward.minimumPurchaseAmount ?? 0, // Default to 0 if null/undefined
                 limitToOneUsePerCustomer: reward.limitToOneUsePerCustomer !== false,
-                startDate: reward.startDate || '',
-                endDate: reward.endDate || '',
             });
         }
     }, [reward, reset]);
@@ -76,8 +74,6 @@ export const EditRewardModal: React.FC<EditRewardModalProps> = ({ isOpen, onClos
                                 style={styles.input}
                             />
                         </div>
-                        <div style={styles.configItem}><label>Start Date</label><input type="date" {...register("startDate")} style={styles.input} /></div>
-                        <div style={styles.configItem}><label>End Date</label><input type="date" {...register("endDate")} style={styles.input} /></div>
                     </div>
                      <div style={{...styles.configRow, marginTop: '1rem'}}>
                         <div style={{...styles.configItem, flex: '0 0 auto', alignItems: 'center', flexDirection: 'row'}}><input type="checkbox" {...register("limitToOneUsePerCustomer")} id="limit-one-use-edit" /><label htmlFor="limit-one-use-edit" style={{marginLeft: '0.5rem'}}>Limit to one use per customer</label></div>

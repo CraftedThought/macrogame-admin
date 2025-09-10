@@ -1,7 +1,7 @@
 // src/App.tsx
 
 import React, { useState } from 'react';
-import { Macrogame, Microgame, Popup, CurrentPage } from './types';
+import { Macrogame, Microgame, Popup, CurrentPage, CustomMicrogame } from './types';
 import { styles } from './App.styles';
 import { useData } from './context/DataContext';
 
@@ -12,10 +12,11 @@ import { MacrogamesManager } from './components/views/MacrogamesManager';
 import { MicrogamesPage } from './components/views/MicrogamesPage';
 import { PopupManager } from './components/views/PopupManager';
 import { RewardsPage } from './components/views/RewardsPage';
+import { CampaignsManager } from './components/views/CampaignsManager'; // NEW IMPORT
 import { MacrogameForm } from './components/views/MacrogameForm';
 import { PopupEditorModal } from './components/modals/PopupEditorModal';
 import { MicrogameCustomizerModal } from './components/modals/MicrogameCustomizerModal';
-import { MacrogameWizardModal } from './components/wizards/MacrogameWizardModal'; // <-- IMPORT WIZARD
+import { MacrogameWizardModal } from './components/wizards/MacrogameWizardModal';
 
 export default function App() {
     // UI state management
@@ -23,7 +24,7 @@ export default function App() {
     const [editingMacrogame, setEditingMacrogame] = useState<Macrogame | null>(null);
     const [editingPopup, setEditingPopup] = useState<Popup | null>(null);
     const [customizingMicrogame, setCustomizingMicrogame] = useState<{ baseGame: Microgame, variant?: CustomMicrogame } | null>(null);
-    const [isWizardOpen, setIsWizardOpen] = useState(false); // <-- ADDED WIZARD STATE
+    const [isWizardOpen, setIsWizardOpen] = useState(false);
 
     const { macrogames, updateMacrogame, updatePopup, saveCustomMicrogame, createPopup } = useData();
 
@@ -45,7 +46,6 @@ export default function App() {
 
     return (
         <div style={styles.page}>
-            {/* RENDER THE WIZARD MODAL */}
             <MacrogameWizardModal 
                 isOpen={isWizardOpen} 
                 onClose={() => setIsWizardOpen(false)}
@@ -84,8 +84,9 @@ export default function App() {
             <main style={styles.main}>
                 {currentPage.page === 'creator' && <MacrogameCreator setCurrentPage={setCurrentPage} onLaunchWizard={() => setIsWizardOpen(true)} />}
                 {currentPage.page === 'manager' && <MacrogamesManager handleDeployMacrogame={handleDeployMacrogame} handleEditMacrogame={setEditingMacrogame} setCurrentPage={setCurrentPage} />}
-                {currentPage.page === 'microgames' && <MicrogamesPage onCustomize={setCustomizingMicrogame} />}
                 {currentPage.page === 'popups' && <PopupManager handleEditPopup={setEditingPopup} />}
+                {currentPage.page === 'campaigns' && <CampaignsManager />}
+                {currentPage.page === 'microgames' && <MicrogamesPage onCustomize={setCustomizingMicrogame} />}
                 {currentPage.page === 'rewards' && <RewardsPage />}
             </main>
         </div>

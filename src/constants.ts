@@ -55,3 +55,5 @@ export const SKIN_COLOR_SCHEMES: { [key: string]: { [key: string]: string } } = 
 };
 
 export const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+export const DISCOUNT_VALUE_OPTIONS = ['All', '<5', '5-10', '11-15', '16-20', '20+'];
