@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { styles } from '../../App.styles';
 import { Campaign } from '../../types';
-import { useData } from '../../context/DataContext';
+import { useData } from '../../hooks/useData';
 import { PaginatedList } from '../ui/PaginatedList';
 import { CampaignFormModal } from '../modals/CampaignFormModal';
 import { FilterBar, FilterConfig } from '../ui/FilterBar';

@@ -3,10 +3,9 @@
 import React, { useState, useMemo } from 'react';
 import { styles } from '../../App.styles';
 import { Microgame, CustomMicrogame, Popup } from '../../types';
-import { useData } from '../../context/DataContext';
+import { useData } from '../../hooks/useData';
 import { MicrogameCard } from '../ui/MicrogameCard';
-import { TEMPO_OPTIONS, LENGTH_OPTIONS, LENGTH_DEFINITIONS, UI_SKINS } from '../../constants';
-import { WIZARD_CONVERSION_GOALS, WIZARD_CUSTOMER_TYPES, recommendationData } from '../../wizards/recommendationLogic';
+import { TEMPO_OPTIONS, LENGTH_OPTIONS, LENGTH_DEFINITIONS, UI_SKINS, CONVERSION_GOALS } from '../../constants';
 import { PaginatedList } from '../ui/PaginatedList';
 import { FilterBar, FilterConfig } from '../ui/FilterBar';
 
@@ -48,15 +47,28 @@ export const MicrogamesPage: React.FC<MicrogamesPageProps> = ({ onCustomize }) =
     const { allMicrogames, customMicrogames, toggleMicrogameFavorite, deleteCustomMicrogame } = useData();
     const [expandedCard, setExpandedCard] = useState<string | null>(null);
     const [filters, setFilters] = useState({
-        searchTerm: '', goalFilter: 'All', customerTypeFilter: 'All', tempoFilter: 'All', lengthFilter: 'All'
+        searchTerm: '',
+        goalFilter: 'All',
+        tempoFilter: 'All',
+        lengthFilter: 'All',
+        experienceFilter: 'All', // <-- NEW STATE
+        typeFilter: 'All'        // <-- NEW STATE
     });
 
     const handleFilterChange = (key: string, value: string) => {
-        setFilters(prev => ({ ...prev, [key]: value }));
+        // If experience is changed, reset the type filter
+        if (key === 'experienceFilter' && value !== 'Generalized') {
+            setFilters(prev => ({ ...prev, [key]: value, typeFilter: 'All' }));
+        } else {
+            setFilters(prev => ({ ...prev, [key]: value }));
+        }
     };
 
     const handleResetFilters = () => {
-        setFilters({ searchTerm: '', goalFilter: 'All', customerTypeFilter: 'All', tempoFilter: 'All', lengthFilter: 'All' });
+        setFilters({
+            searchTerm: '', goalFilter: 'All', tempoFilter: 'All', lengthFilter: 'All',
+            experienceFilter: 'All', typeFilter: 'All'
+        });
     };
 
     const handlePreview = (game: Microgame) => {
@@ -68,11 +80,7 @@ export const MicrogamesPage: React.FC<MicrogamesPageProps> = ({ onCustomize }) =
         const previewMacrogame: Omit<Macrogame, 'id' | 'type' | 'createdAt'> & { flow: any[] } = {
             name: `${game.name} - Preview`,
             category: '',
-            config: {
-                titleScreenDuration: 1500,
-                controlsScreenDuration: 2500,
-                backgroundMusicUrl: null
-            },
+            config: { titleScreenDuration: 1500, controlsScreenDuration: 2500, backgroundMusicUrl: null },
             introScreen: { enabled: false, text: '', duration: 0, clickToContinue: false },
             promoScreen: { enabled: false, text: '', duration: 0, clickToContinue: false },
             flow: [{ ...game, customSkinData: {} }],
@@ -88,18 +96,17 @@ export const MicrogamesPage: React.FC<MicrogamesPageProps> = ({ onCustomize }) =
         return allMicrogames
             .filter(game => game.isActive !== false)
             .filter(game => game.name.toLowerCase().includes(filters.searchTerm.toLowerCase()))
-            .filter(game => {
-                if (filters.goalFilter === 'All') return true;
-                const gameRecData = recommendationData.find(rec => rec.id === game.id);
-                return gameRecData?.compatibleGoals.includes(filters.goalFilter as any);
-            })
-            .filter(game => {
-                if (filters.customerTypeFilter === 'All') return true;
-                const gameRecData = recommendationData.find(rec => rec.id === game.id);
-                return gameRecData?.compatibleCustomerTypes.includes(filters.customerTypeFilter as any);
-            })
+            .filter(game => filters.goalFilter === 'All' || game.compatibleConversionGoals.includes(filters.goalFilter))
             .filter(game => filters.tempoFilter === 'All' || game.tempo === filters.tempoFilter)
-            .filter(game => filters.lengthFilter === 'All' || LENGTH_DEFINITIONS[filters.lengthFilter](game.length));
+            .filter(game => filters.lengthFilter === 'All' || LENGTH_DEFINITIONS[filters.lengthFilter](game.length))
+            // <-- NEW FILTER LOGIC
+            .filter(game => filters.experienceFilter === 'All' || game.gameplayExperience === filters.experienceFilter)
+            .filter(game => {
+                if (filters.experienceFilter !== 'Generalized' || filters.typeFilter === 'All') return true;
+                const type = filters.typeFilter === 'Chance-Based' ? 'chance' : 'skill';
+                return game.mechanicType === type;
+            });
+            // <-- END NEW LOGIC
     }, [allMicrogames, filters]);
     
     const favoriteGames = filteredGames.filter(game => game.isFavorite);
@@ -133,12 +140,21 @@ export const MicrogamesPage: React.FC<MicrogamesPageProps> = ({ onCustomize }) =
         </li>
     );
 
+    const allGoalOptions = ['All', ...Object.values(CONVERSION_GOALS).flat()];
     const filterConfig: FilterConfig[] = [
-        { type: 'select', label: 'Conversion Goal', options: WIZARD_CONVERSION_GOALS as any, stateKey: 'goalFilter' },
-        { type: 'select', label: 'Customer Type', options: WIZARD_CUSTOMER_TYPES as any, stateKey: 'customerTypeFilter' },
-        { type: 'select', label: 'Tempo', options: TEMPO_OPTIONS, stateKey: 'tempoFilter' },
-        { type: 'select', label: 'Length', options: LENGTH_OPTIONS, stateKey: 'lengthFilter' },
+        { type: 'select', label: 'Conversion Goal', options: allGoalOptions, stateKey: 'goalFilter' },
+        { type: 'select', label: 'Gameplay Experience', options: ['All', 'Generalized', 'Rehearsal'], stateKey: 'experienceFilter' },
     ];
+
+    // Conditionally add the Type filter
+    if (filters.experienceFilter === 'Generalized') {
+        filterConfig.push({ type: 'select', label: 'Type', options: ['All', 'Chance-Based', 'Skill'], stateKey: 'typeFilter' });
+    }
+
+    filterConfig.push(
+        { type: 'select', label: 'Tempo', options: TEMPO_OPTIONS, stateKey: 'tempoFilter' },
+        { type: 'select', label: 'Length', options: LENGTH_OPTIONS, stateKey: 'lengthFilter' }
+    );
 
     return (
         <div style={styles.creatorSection}>

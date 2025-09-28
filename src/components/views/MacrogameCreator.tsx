@@ -3,15 +3,17 @@
 import React, { useState } from 'react';
 import { styles } from '../../App.styles';
 import { Macrogame, CurrentPage } from '../../types';
-import { useData } from '../../context/DataContext';
+import { useData } from '../../hooks/useData';
 import { MacrogameForm } from './MacrogameForm';
 
 interface MacrogameCreatorProps {
     setCurrentPage: React.Dispatch<React.SetStateAction<CurrentPage>>;
-    onLaunchWizard: () => void;
+    onLaunchWizard: (data: object) => void;
+    flowFromWizard: Microgame[] | null;
+    onClearWizardFlow: () => void;
 }
 
-export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ setCurrentPage, onLaunchWizard }) => {
+export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ setCurrentPage, onLaunchWizard, flowFromWizard, onClearWizardFlow }) => {
     const { macrogames, createMacrogame } = useData();
     const [listPage, setListPage] = useState(1);
     const ITEMS_PER_PAGE = 5;
@@ -27,17 +29,7 @@ export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ setCurrentPa
 
     return (
         <>
-            <div style={{...styles.creatorSection, marginBottom: '2rem'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                    <div>
-                        <h2 style={{...styles.h2, marginBottom: '0.5rem'}}>Macrogame Wizard</h2>
-                        <p style={styles.descriptionText}>Need help getting started? Use the wizard to generate a macrogame based on your goals.</p>
-                    </div>
-                    <button onClick={onLaunchWizard} style={styles.createButton}>Launch Wizard</button>
-                </div>
-            </div>
-
-            <MacrogameForm onSave={handleSave} setCurrentPage={setCurrentPage} />
+            <MacrogameForm onSave={handleSave} setCurrentPage={setCurrentPage} onLaunchWizard={onLaunchWizard} flowFromWizard={flowFromWizard} onClearWizardFlow={onClearWizardFlow} />
 
             <div>
                 <div style={styles.managerHeader}>

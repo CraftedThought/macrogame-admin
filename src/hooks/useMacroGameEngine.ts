@@ -1,32 +1,52 @@
 // src/hooks/useMacroGameEngine.ts
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Macrogame, Reward, Microgame as MicrogameData, MicrogameResult } from '../types';
+import { Macrogame, Microgame as MicrogameData, MicrogameResult, ConversionScreen, ConversionMethod } from '../types';
 
 const WIN_SOUND_SRC = '/sounds/success.wav';
 const LOSE_SOUND_SRC = '/sounds/lose.wav';
 
-export const useMacroGameEngine = (macrogame?: Macrogame, allRewards?: Reward[]) => {
+export const useMacroGameEngine = (macrogame?: Macrogame, allConversionScreens?: ConversionScreen[], allConversionMethods?: ConversionMethod[]) => {
   const [view, setView] = useState<'loading' | 'intro' | 'title' | 'controls' | 'game' | 'result' | 'promo' | 'end'>('loading');
   const [points, setPoints] = useState(0);
   const [activeGameData, setActiveGameData] = useState<MicrogameData | null>(null);
   const [result, setResult] = useState<MicrogameResult | null>(null);
   const [isMuted, setIsMuted] = useState(false);
-  
+  const [activeConversionScreen, setActiveConversionScreen] = useState<ConversionScreen | null>(null);
+  const [activeMethods, setActiveMethods] = useState<ConversionMethod[]>([]);
+
   const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
   const gameIndexRef = useRef(0);
 
+  const transitionToEnd = useCallback(() => {
+    if (!macrogame || !allConversionScreens || !allConversionMethods) {
+        setView('end'); // Go to a blank end screen if data is missing
+        return;
+    }
+
+    if (macrogame.conversionScreenId) {
+        const screen = allConversionScreens.find(s => s.id === macrogame.conversionScreenId);
+        if (screen) {
+            setActiveConversionScreen(screen);
+            const methods = screen.methods.map(m => allConversionMethods.find(fullMethod => fullMethod.id === m.methodId)).filter(Boolean) as ConversionMethod[];
+            setActiveMethods(methods);
+        }
+    }
+
+    audioRef.current.bg?.pause();
+    setView('end');
+  }, [macrogame, allConversionScreens, allConversionMethods]);
+
   const runFlow = useCallback(async () => {
     if (!macrogame) return;
-    if (gameIndexRef.current >= macrogame.flow.length) {
-      if (macrogame.promoScreen?.enabled) {
-        setView('promo');
-      } else {
-        audioRef.current.bg?.pause();
-        setView('end');
+      if (gameIndexRef.current >= macrogame.flow.length) {
+        if (macrogame.promoScreen?.enabled) {
+          setView('promo');
+        } else {
+          transitionToEnd();
+        }
+        return;
       }
-      return;
-    }
 
     const gameFlow = macrogame.flow as unknown as MicrogameData[];
     const gameData = gameFlow[gameIndexRef.current];
@@ -46,8 +66,7 @@ export const useMacroGameEngine = (macrogame?: Macrogame, allRewards?: Reward[])
 
   const advanceFromPromo = useCallback(() => {
     if (view === 'promo') {
-      audioRef.current.bg?.pause();
-      setView('end');
+      transitionToEnd();
     }
   }, [view]);
 
@@ -116,5 +135,5 @@ export const useMacroGameEngine = (macrogame?: Macrogame, allRewards?: Reward[])
     }
   }, [macrogame, runFlow]);
 
-  return { view, points, result, activeGameData, macrogame, allRewards, start, onGameEnd, isMuted, toggleMute, advanceFromIntro, advanceFromPromo };
+  return { view, points, result, activeGameData, macrogame, start, onGameEnd, isMuted, toggleMute, advanceFromIntro, advanceFromPromo, activeConversionScreen, activeMethods };
 };

@@ -15,7 +15,7 @@ export const styles: {[key: string]: React.CSSProperties} = {
   descriptionText: { marginTop: '-1rem', marginBottom: '1.5rem', color: '#606770' },
   formRow: { display: 'flex', gap: '1rem', marginBottom: '1rem' },
   formHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  input: { padding: '0.75rem', border: '1px solid #ccc', borderRadius: '6px', fontSize: '1rem', width: '100%', boxSizing: 'border-box', backgroundColor: '#ffffff', color: '#1c1e21' },
+  input: { padding: '0.75rem', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ccc', borderRadius: '6px', fontSize: '1rem', width: '100%', boxSizing: 'border-box', backgroundColor: '#ffffff', color: '#1c1e21' },
   cardContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem', alignItems: 'start' },
   card: { backgroundColor: '#f7f7f7', padding: '1rem', borderRadius: '8px', border: '2px solid transparent', cursor: 'default', transition: 'all 0.2s', color: '#333' },
   cardSelected: { borderColor: '#0866ff', backgroundColor: '#eaf5fc' },
@@ -56,15 +56,16 @@ export const styles: {[key: string]: React.CSSProperties} = {
   managerList: { display: 'flex', flexDirection: 'column', gap: '1rem' },
   managerActions: { display: 'flex', alignItems: 'center', gap: '1rem' },
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  modalContent: { backgroundColor: 'white', padding: '0', borderRadius: '8px', width: '90%', maxWidth: '600px', boxShadow: '0 5px 15px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' },
-  modalBody: { padding: '2rem', overflowY: 'auto' },
-  modalContentLarge: { backgroundColor: 'white', borderRadius: '8px', width: '90%', maxWidth: '1400px', boxShadow: '0 5px 15px rgba(0,0,0,0.3)', maxHeight: '90vh', overflowY: 'auto' },
-  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', padding: '1.5rem 2rem' },
+  modalContent: { backgroundColor: 'white', padding: '0', borderRadius: '8px', width: '90%', maxWidth: '600px', boxShadow: '0 5px 15px rgba(0,0,0,0.3)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' },
+  modalContentMedium: { backgroundColor: 'white', padding: '0', borderRadius: '8px', width: '90%', maxWidth: '800px', boxShadow: '0 5px 15px rgba(0,0,0,0.3)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' },
+  modalBody: { padding: '2rem', overflowY: 'auto', flexGrow: 1 },
+  modalContentLarge: { backgroundColor: 'white', borderRadius: '8px', width: '90%', maxWidth: '1200px', boxShadow: '0 5px 15px rgba(0,0,0,0.3)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' },
+  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', padding: '1.5rem 2rem', flexShrink: 0 },
   modalCloseButton: { background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' },
   rewardsList: { listStyle: 'none', padding: 0, margin: 0, maxHeight: '200px', overflowY: 'auto' },
   rewardItem: { display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 0.5rem', borderBottom: '1px solid #f0f0f0' },
   pointsInput: { width: '80px', padding: '0.5rem', marginLeft: 'auto' },
-  modalFooter: { display: 'flex', justifyContent: 'flex-end', gap: '1rem', paddingTop: '1rem', marginTop: 'auto', borderTop: '1px solid #eee', padding: '1.5rem 2rem' },
+  modalFooter: { display: 'flex', justifyContent: 'flex-end', gap: '1rem', paddingTop: '1rem', marginTop: 'auto', borderTop: '1px solid #eee', padding: '1.5rem 2rem', flexShrink: 0 },
   rewardsListContainer: {},
   rewardsCreateForm: { display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '1rem' },
   rewardsListFull: { listStyle: 'none', padding: 0, margin: 0 },
@@ -202,4 +203,36 @@ export const styles: {[key: string]: React.CSSProperties} = {
     gap: '1.5rem', // This will create the space between the search and filter sections
     marginBottom: '2rem',
   },
+  tabContainer: {
+    display: 'flex',
+    borderBottom: '2px solid #ddd',
+    marginBottom: '2rem',
+  },
+  tabButton: {
+    padding: '1rem 1.5rem',
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
+    fontSize: '1.1rem',
+    color: '#606770',
+    borderBottom: '3px solid transparent',
+    marginBottom: '-2px' // Align with the container's bottom border
+  },
+  tabButtonActive: {
+    color: '#0866ff',
+    borderBottom: '3px solid #0866ff',
+    fontWeight: 'bold'
+  },
+  multiSelectContainer: {
+    maxHeight: '200px',
+    overflowY: 'auto',
+    border: '1px solid #ccc',
+    borderRadius: '6px',
+    padding: '0.5rem',
+  },
+  multiSelectItem: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0.5rem',
+  }
 };

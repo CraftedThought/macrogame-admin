@@ -35,13 +35,15 @@ export interface MacrogameFlowItem {
 export interface Macrogame {
   id: string;
   name: string;
+  conversionGoal?: string;
+  gameplayExperience?: 'Rehearsal' | 'Generalized';
   category: string;
   createdAt: string;
   config: MacrogameConfig;
   introScreen: ScreenConfig;
   promoScreen: ScreenConfig;
   flow: MacrogameFlowItem[];
-  rewards: { rewardId: string; name: string; pointsCost: number }[];
+  conversionScreenId: string | null; // ID of the linked Conversion Screen
   type: 'default' | 'wizard';
   isFavorite?: boolean;
 }
@@ -61,6 +63,11 @@ export interface Microgame {
       }
   };
   isFavorite?: boolean;
+  gameplayExperience: 'Rehearsal' | 'Generalized';
+  mechanicType?: 'skill' | 'chance';
+  compatibleConversionGoals: string[];
+  compatibleProductCategories: string[];
+  compatibleCustomerTypes: string[];
 }
 
 // A user-created variant of a base microgame.
@@ -117,19 +124,87 @@ export interface Campaign {
   displayRules: DisplayRule[];
 }
 
-// Data for a single reward that can be earned.
-export interface Reward {
+// --- Conversion Method Interfaces ---
+
+// Base properties shared by all conversion types
+interface ConversionMethodBase {
   id: string;
-  name: string;
-  type: 'percentage_discount' | 'fixed_discount' | 'free_shipping';
-  value: string;
-  codeType: 'single' | 'unique';
+  name: string; // Internal name for management
+  headline: string;
+  subheadline: string;
   createdAt: string;
-  redemptions: number;
-  conversionRate: number;
-  appliesTo?: 'entire_order' | 'specific_products' | 'specific_collections';
-  minimumPurchaseAmount?: number | null;
-  limitToOneUsePerCustomer?: boolean;
+}
+
+export interface EmailCaptureMethod extends ConversionMethodBase {
+  type: 'email_capture';
+  submitButtonText: string;
+}
+
+export interface FormField {
+  name: string;
+  label: string;
+  type: 'text' | 'email' | 'tel' | 'number';
+  required: boolean;
+}
+
+export interface FormSubmitMethod extends ConversionMethodBase {
+  type: 'form_submit';
+  fields: FormField[];
+  submitButtonText: string;
+}
+
+export interface LinkRedirectMethod extends ConversionMethodBase {
+  type: 'link_redirect';
+  buttonText: string;
+  url: string;
+  utmEnabled?: boolean;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+}
+
+export interface CouponDisplayMethod extends ConversionMethodBase {
+  type: 'coupon_display';
+  codeType: 'static' | 'dynamic';
+  staticCode: string;
+  dynamicCodeListId?: string; // ID linking to a list of unique codes
+  discountType: 'percentage' | 'fixed_amount';
+  discountValue: number;
+}
+
+export interface SocialFollowMethod extends ConversionMethodBase {
+    type: 'social_follow';
+    links: {
+        platform: 'facebook' | 'instagram' | 'tiktok' | 'x' | 'youtube' | 'pinterest';
+        url: string;
+    }[];
+}
+
+// A union type to represent any possible conversion method
+export type ConversionMethod = EmailCaptureMethod | FormSubmitMethod | LinkRedirectMethod | CouponDisplayMethod | SocialFollowMethod;
+
+// Represents the final screen in a macrogame, which hosts conversion methods.
+export interface ConversionScreen {
+  id: string;
+  name: string; // Internal name for management
+
+  // Content & Styling
+  headline: string;
+  bodyText: string;
+  backgroundImageUrl?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  layout: 'single_column'; // Preparing for future layouts like 'two_column'
+
+  // Hosted Methods with Gating Logic
+  methods: {
+    instanceId: string; // Unique ID for this specific instance on the screen
+    methodId: string;   // ID of the ConversionMethod being used
+    gate?: {
+      methodInstanceId: string; // The instanceId of the method that acts as the gate
+      condition: 'on_success'; // e.g., show this method on successful submission of the gating method
+    }
+  }[];
 }
 
 // The result of a single microgame play.
@@ -146,5 +221,5 @@ export interface MicrogameProps {
 
 // Represents the currently active page in the main App component.
 export interface CurrentPage {
-  page: 'creator' | 'manager' | 'popups' | 'microgames' | 'rewards' | 'campaigns';
+  page: 'creator' | 'manager' | 'delivery' | 'microgames' | 'conversions' | 'campaigns';
 }

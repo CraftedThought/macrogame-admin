@@ -1,8 +1,28 @@
 // src/constants.ts
 
-import { UISkin } from './types';
+export const CONVERSION_GOALS = {
+  'Drive Sales & Revenue': [
+    'Increase Overall Conversion Rate',
+    'Promote Specific Products or Collections',
+    'Increase Average Order Value (AOV)',
+    'Promote a Site-Wide Sale or Offer',
+  ],
+  'Generate Leads & Grow Audience': [
+    'Generate Leads',
+    'Collect Email or SMS Subscribers',
+    'Increase Account or Loyalty Program Sign-ups',
+    'Drive Social Media Engagement',
+  ],
+};
 
-export const USER_SELECTABLE_CATEGORIES: string[] = ['Beauty & Cosmetics', 'Gaming & Electronics', 'Pet Products'];
+export const PRODUCT_CATEGORIES: { [key: string]: string[] } = {
+  'Beauty & Cosmetics': ['Face', 'Lips', 'Skin', 'Body', 'Hair', 'Accessories'],
+  'Gaming & Electronics': ['Accessories', 'PC Components', 'PC Gaming', 'Consoles & Portable Gaming', 'Smart Home Devices', 'Merch & Collectibles'],
+  'Pet Products': ['Food & Treats', 'Health & Wellness', 'Smart Tech', 'Accessories & Furniture', 'Toys & Enrichment'],
+  'Sporting Goods': ['Outdoor', 'Fitness', 'Team Sports', 'Individual Sports'],
+};
+
+import { UISkin } from './types';
 
 export const TEMPO_OPTIONS = ['All', 'Fast', 'Normal', 'Slow'];
 

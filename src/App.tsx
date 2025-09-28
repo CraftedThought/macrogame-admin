@@ -3,17 +3,19 @@
 import React, { useState } from 'react';
 import { Macrogame, Microgame, Popup, CurrentPage, CustomMicrogame } from './types';
 import { styles } from './App.styles';
-import { useData } from './context/DataContext';
+import { useData } from './hooks/useData';
 
 // Import components
 import { Nav } from './components/views/Nav';
 import { MacrogameCreator } from './components/views/MacrogameCreator';
 import { MacrogamesManager } from './components/views/MacrogamesManager';
 import { MicrogamesPage } from './components/views/MicrogamesPage';
-import { PopupManager } from './components/views/PopupManager';
-import { RewardsPage } from './components/views/RewardsPage';
-import { CampaignsManager } from './components/views/CampaignsManager'; // NEW IMPORT
+import { DeliveryManager } from './components/views/DeliveryManager';
+import { EditRewardModal } from './components/modals/EditRewardModal';
+import { CampaignsManager } from './components/views/CampaignsManager';
+import { ConversionsManagerPage } from './components/views/ConversionsManagerPage';
 import { MacrogameForm } from './components/views/MacrogameForm';
+import { Modal } from './components/ui/Modal';
 import { PopupEditorModal } from './components/modals/PopupEditorModal';
 import { MicrogameCustomizerModal } from './components/modals/MicrogameCustomizerModal';
 import { MacrogameWizardModal } from './components/wizards/MacrogameWizardModal';
@@ -24,7 +26,8 @@ export default function App() {
     const [editingMacrogame, setEditingMacrogame] = useState<Macrogame | null>(null);
     const [editingPopup, setEditingPopup] = useState<Popup | null>(null);
     const [customizingMicrogame, setCustomizingMicrogame] = useState<{ baseGame: Microgame, variant?: CustomMicrogame } | null>(null);
-    const [isWizardOpen, setIsWizardOpen] = useState(false);
+    const [wizardData, setWizardData] = useState<object | null>(null);
+    const [flowFromWizard, setFlowFromWizard] = useState<Microgame[] | null>(null);
 
     const { macrogames, updateMacrogame, updatePopup, saveCustomMicrogame, createPopup } = useData();
 
@@ -47,23 +50,42 @@ export default function App() {
     return (
         <div style={styles.page}>
             <MacrogameWizardModal 
-                isOpen={isWizardOpen} 
-                onClose={() => setIsWizardOpen(false)}
+                isOpen={!!wizardData} 
+                onClose={() => setWizardData(null)}
                 setCurrentPage={setCurrentPage}
+                initialData={wizardData}
+                onContinue={(newFlow) => {
+                    setFlowFromWizard(newFlow);
+                    setWizardData(null); // Close the modal
+                }}
             />
 
-            {editingMacrogame && (
-                <div style={styles.modalOverlay}>
-                    <div style={styles.modalContentLarge}>
-                        <MacrogameForm
-                            existingMacrogame={editingMacrogame}
-                            onSave={handleUpdateAndCloseMacrogame}
-                            onCancel={() => setEditingMacrogame(null)}
-                            setCurrentPage={setCurrentPage}
-                        />
-                    </div>
-                </div>
-            )}
+            <Modal
+                isOpen={!!editingMacrogame}
+                onClose={() => setEditingMacrogame(null)}
+                title="Edit Macrogame"
+                size="large"
+                footer={(
+                    <>
+                        <button type="button" onClick={() => setEditingMacrogame(null)} style={styles.secondaryButton}>Cancel</button>
+                        {/* This button finds and clicks the hidden save button inside the form */}
+                        <button type="button" onClick={() => document.getElementById('macrogame-form-save-button')?.click()} style={styles.saveButton}>Save Changes</button>
+                    </>
+                )}
+            >
+                {/* [FIX APPLIED] The MacrogameForm is now rendered unconditionally. 
+                  Its internal useEffect hook will handle populating data when 'existingMacrogame' prop changes from null to a Macrogame object.
+                  This avoids the expensive component mounting operation that was causing the scroll-lock race condition.
+                */}
+                <MacrogameForm
+                    existingMacrogame={editingMacrogame}
+                    onSave={handleUpdateAndCloseMacrogame}
+                    setCurrentPage={setCurrentPage}
+                    onLaunchWizard={(data) => setWizardData(data)}
+                    flowFromWizard={flowFromWizard}
+                    onClearWizardFlow={() => setFlowFromWizard(null)}
+                />
+            </Modal>
             <PopupEditorModal
                 isOpen={!!editingPopup}
                 onClose={() => setEditingPopup(null)}
@@ -82,12 +104,12 @@ export default function App() {
                 <Nav currentPage={currentPage} setCurrentPage={setCurrentPage} />
             </header>
             <main style={styles.main}>
-                {currentPage.page === 'creator' && <MacrogameCreator setCurrentPage={setCurrentPage} onLaunchWizard={() => setIsWizardOpen(true)} />}
+                {currentPage.page === 'creator' && <MacrogameCreator setCurrentPage={setCurrentPage} onLaunchWizard={(data) => setWizardData(data)} flowFromWizard={flowFromWizard} onClearWizardFlow={() => setFlowFromWizard(null)} />}
                 {currentPage.page === 'manager' && <MacrogamesManager handleDeployMacrogame={handleDeployMacrogame} handleEditMacrogame={setEditingMacrogame} setCurrentPage={setCurrentPage} />}
-                {currentPage.page === 'popups' && <PopupManager handleEditPopup={setEditingPopup} />}
+                {currentPage.page === 'delivery' && <DeliveryManager handleEditPopup={setEditingPopup} />}
                 {currentPage.page === 'campaigns' && <CampaignsManager />}
                 {currentPage.page === 'microgames' && <MicrogamesPage onCustomize={setCustomizingMicrogame} />}
-                {currentPage.page === 'rewards' && <RewardsPage />}
+                {currentPage.page === 'conversions' && <ConversionsManagerPage />}
             </main>
         </div>
     );

@@ -1,13 +1,13 @@
 // src/context/DataContext.tsx
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect, ReactNode } from 'react';
 import { db, storage } from '../firebase/config';
 import {
     collection, addDoc, onSnapshot, query, doc, updateDoc,
     deleteDoc, DocumentData, setDoc, writeBatch, getDocs, where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
-import { Macrogame, Microgame, Popup, Reward, CustomMicrogame, Campaign } from '../types';
+import { Macrogame, Microgame, Popup, ConversionMethod, CustomMicrogame, Campaign, ConversionScreen } from '../types';
 import { seedMicrogames } from '../scripts/seedDatabase';
 
 // Helper function to generate a unique name for duplicated items
@@ -23,11 +23,12 @@ const generateUniqueName = (name: string, existingNames: Set<string>): string =>
     return `${baseName} (${counter})`;
 };
 
-interface DataContextType {
+export interface DataContextType {
     macrogames: Macrogame[];
     popups: Popup[];
     campaigns: Campaign[];
-    allRewards: Reward[];
+    allConversionMethods: ConversionMethod[];
+    allConversionScreens: ConversionScreen[];
     allMicrogames: Microgame[];
     customMicrogames: CustomMicrogame[];
     // Campaign Functions
@@ -36,36 +37,45 @@ interface DataContextType {
     updateCampaignStatus: (campaignId: string, status: Campaign['status']) => Promise<void>;
     deleteCampaign: (campaignId: string) => Promise<void>;
     duplicateCampaign: (campaignToDuplicate: Campaign) => Promise<void>;
-    // Other Functions...
+    // Macrogame Functions
     createMacrogame: (newMacrogame: Omit<Macrogame, 'id' | 'type'> & { id: string | null }) => Promise<void>;
     updateMacrogame: (updatedMacrogame: Omit<Macrogame, 'id' | 'type'> & { id: string | null }) => Promise<void>;
     deleteMacrogame: (id: string) => Promise<void>;
     deleteMultipleMacrogames: (ids: string[]) => Promise<void>;
     duplicateMacrogame: (gameToDuplicate: Macrogame) => Promise<void>;
     toggleMacrogameFavorite: (macrogameId: string, isFavorite: boolean) => Promise<void>;
+    // Popup Functions
     createPopup: (newPopup: Omit<Popup, 'id'>) => Promise<void>;
     deletePopup: (id: string) => Promise<void>;
     deleteMultiplePopups: (ids: string[]) => Promise<void>;
     updatePopup: (popupId: string, dataToUpdate: Partial<Popup>) => Promise<void>;
     duplicatePopup: (popupToDuplicate: Popup) => Promise<void>;
     togglePopupFavorite: (popupId: string, isFavorite: boolean) => Promise<void>;
+    // Microgame Functions
     saveCustomMicrogame: (baseGame: Microgame, variantName: string, skinFiles: { [key: string]: File }, existingVariant?: CustomMicrogame) => Promise<void>;
     toggleMicrogameFavorite: (gameId: string, isFavorite: boolean) => Promise<void>;
     deleteCustomMicrogame: (variantId: string) => Promise<void>;
-    createReward: (newReward: Omit<Reward, 'id'>) => Promise<void>;
-    updateReward: (rewardId: string, updatedReward: Partial<Omit<Reward, 'id'>>) => Promise<void>;
-    deleteReward: (rewardId: string) => Promise<void>;
-    deleteMultipleRewards: (ids: string[]) => Promise<void>;
-    duplicateReward: (rewardToDuplicate: Reward) => Promise<void>;
+    // Conversion Method Functions
+    createConversionMethod: (newMethod: Omit<ConversionMethod, 'id'>) => Promise<void>;
+    updateConversionMethod: (methodId: string, updatedMethod: Partial<Omit<ConversionMethod, 'id'>>) => Promise<void>;
+    deleteConversionMethod: (methodId: string) => Promise<void>;
+    deleteMultipleConversionMethods: (ids: string[]) => Promise<void>;
+    duplicateConversionMethod: (methodToDuplicate: ConversionMethod) => Promise<void>;
+    // Conversion Screen Functions
+    createConversionScreen: (newScreen: Omit<ConversionScreen, 'id'>) => Promise<void>;
+    updateConversionScreen: (screenId: string, updatedScreen: Partial<Omit<ConversionScreen, 'id'>>) => Promise<void>;
+    deleteConversionScreen: (screenId: string) => Promise<void>;
+    duplicateConversionScreen: (screenToDuplicate: ConversionScreen) => Promise<void>;
 }
 
-const DataContext = createContext<DataContextType | undefined>(undefined);
+export const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [macrogames, setMacrogames] = useState<Macrogame[]>([]);
     const [popups, setPopups] = useState<Popup[]>([]);
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-    const [allRewards, setAllRewards] = useState<Reward[]>([]);
+    const [allConversionMethods, setAllConversionMethods] = useState<ConversionMethod[]>([]);
+    const [allConversionScreens, setAllConversionScreens] = useState<ConversionScreen[]>([]);
     const [allMicrogames, setAllMicrogames] = useState<Microgame[]>([]);
     const [customMicrogames, setCustomMicrogames] = useState<CustomMicrogame[]>([]);
 
@@ -75,7 +85,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const unsubMacrogames = onSnapshot(query(collection(db, 'macrogames')), snap => setMacrogames(snap.docs.map(doc => ({ ...doc.data() as Omit<Macrogame, 'id'>, id: doc.id }))));
         const unsubPopups = onSnapshot(query(collection(db, 'popups')), snap => setPopups(snap.docs.map(doc => ({ ...doc.data() as Omit<Popup, 'id'>, id: doc.id }))));
         const unsubCampaigns = onSnapshot(query(collection(db, 'campaigns')), snap => setCampaigns(snap.docs.map(doc => ({ ...doc.data() as Omit<Campaign, 'id'>, id: doc.id }))));
-        const unsubRewards = onSnapshot(query(collection(db, 'rewards')), snap => setAllRewards(snap.docs.map(doc => ({ ...doc.data() as Omit<Reward, 'id'>, id: doc.id }))));
+        const unsubConversionMethods = onSnapshot(query(collection(db, 'conversionMethods')), snap => setAllConversionMethods(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as ConversionMethod))));
+        const unsubConversionScreens = onSnapshot(query(collection(db, 'conversionScreens')), snap => setAllConversionScreens(snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as ConversionScreen))));
         const unsubMicrogames = onSnapshot(query(collection(db, 'microgames')), snap => setAllMicrogames(snap.docs.map(doc => ({ ...doc.data() as Microgame, id: doc.id }))));
         const unsubCustomMicrogames = onSnapshot(query(collection(db, 'customMicrogames')), snap => { setCustomMicrogames(snap.docs.map(doc => ({ ...doc.data() as Omit<CustomMicrogame, 'id'>, id: doc.id }))); });
         
@@ -83,7 +94,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             unsubMacrogames();
             unsubPopups();
             unsubCampaigns();
-            unsubRewards();
+            unsubConversionMethods();
+            unsubConversionScreens();
             unsubMicrogames();
             unsubCustomMicrogames();
         };
@@ -93,8 +105,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const createCampaign = async (newCampaign: Omit<Campaign, 'id'>) => {
         const docRef = await addDoc(collection(db, 'campaigns'), newCampaign);
         const campaignId = docRef.id;
-
-        // After creating, link all popups in its display rules
         const batch = writeBatch(db);
         newCampaign.displayRules.forEach(rule => {
             rule.popups.forEach(p => {
@@ -106,28 +116,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
     const updateCampaign = async (campaignId: string, dataToUpdate: Partial<Campaign>) => {
         const campaignRef = doc(db, 'campaigns', campaignId);
-
-        // Unlink popups that are no longer in this campaign
         const oldPopupsQuery = query(collection(db, 'popups'), where('campaignId', '==', campaignId));
         const oldPopupsSnap = await getDocs(oldPopupsQuery);
         const newPopupIds = new Set(dataToUpdate.displayRules?.flatMap(rule => rule.popups.map(p => p.popupId)) || []);
-
         const batch = writeBatch(db);
         oldPopupsSnap.forEach(popupDoc => {
             if (!newPopupIds.has(popupDoc.id)) {
                 batch.update(popupDoc.ref, { campaignId: null });
             }
         });
-
-        // Link new popups
         newPopupIds.forEach(popupId => {
             const popupRef = doc(db, 'popups', popupId);
             batch.update(popupRef, { campaignId: campaignId });
         });
-
-        // Update the campaign doc itself
         batch.update(campaignRef, dataToUpdate);
-
         await batch.commit();
     };
     const updateCampaignStatus = async (campaignId: string, status: Campaign['status']) => {
@@ -135,7 +137,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
     const deleteCampaign = async (campaignId: string) => {
         if (window.confirm("Are you sure? This will not delete the popups inside, but they will become unassigned.")) {
-            // TODO: In the future, clean up campaignId from popups within this campaign
+            const batch = writeBatch(db);
+            const popupsQuery = await getDocs(query(collection(db, 'popups'), where('campaignId', '==', campaignId)));
+            popupsQuery.forEach(popupDoc => {
+                batch.update(popupDoc.ref, { campaignId: null });
+            });
+            await batch.commit();
             await deleteDoc(doc(db, 'campaigns', campaignId));
         }
     };
@@ -154,6 +161,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
     const updateMacrogame = async (updatedMacrogame: Omit<Macrogame, 'id' | 'type'> & { id: string | null }) => {
         if (!updatedMacrogame.id) return;
+
+        // --- OPTIMISTIC UPDATE ---
+        // Immediately update our local state with the new data.
+        setMacrogames(prevMacrogames =>
+            prevMacrogames.map(game =>
+                game.id === updatedMacrogame.id ? { ...game, ...updatedMacrogame } : game
+            )
+        );
+
+        // Then, send the update to Firestore to persist the change.
         const { id, ...gameData } = updatedMacrogame;
         await updateDoc(doc(db, "macrogames", id), gameData as DocumentData);
     };
@@ -189,7 +206,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // --- Popup Functions ---
     const createPopup = async (newPopup: Omit<Popup, 'id'>) => {
-        await addDoc(collection(db, 'popups'), newPopup);
+        const docRef = await addDoc(collection(db, 'popups'), newPopup);
+        // Optimistic Update
+        const finalNewPopup = { ...newPopup, id: docRef.id } as Popup;
+        setPopups(prevPopups => [...prevPopups, finalNewPopup]);
     };
     const deletePopup = async (id: string) => {
         if (window.confirm("Are you sure you want to delete this popup?")) {
@@ -204,6 +224,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
     const updatePopup = async (popupId: string, dataToUpdate: Partial<Popup>) => {
+        // Optimistic Update
+        setPopups(prevPopups =>
+            prevPopups.map(p =>
+                p.id === popupId ? { ...p, ...dataToUpdate } : p
+            )
+        );
+        // Persist to Firestore
         await updateDoc(doc(db, "popups", popupId), dataToUpdate);
     };
     const duplicatePopup = async (popupToDuplicate: Popup) => {
@@ -267,70 +294,81 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    // --- Reward Functions ---
-    const createReward = async (newReward: Omit<Reward, 'id'>) => {
-        await addDoc(collection(db, 'rewards'), newReward);
+    // --- Conversion Method Functions ---
+    const createConversionMethod = async (newMethod: Omit<ConversionMethod, 'id'>) => {
+        await addDoc(collection(db, 'conversionMethods'), newMethod);
     };
-    const updateReward = async (rewardId: string, updatedReward: Partial<Omit<Reward, 'id'>>) => {
-        await updateDoc(doc(db, 'rewards', rewardId), updatedReward);
+    const updateConversionMethod = async (methodId: string, updatedMethod: Partial<Omit<ConversionMethod, 'id'>>) => {
+        await updateDoc(doc(db, 'conversionMethods', methodId), updatedMethod);
     };
-    const deleteReward = async (rewardId: string) => {
-        if (window.confirm("Are you sure? This reward will be removed from all macrogames that use it.")) {
+    const deleteConversionMethod = async (methodId: string) => {
+        if (window.confirm("Are you sure? This method will be removed from all conversion screens that use it.")) {
             const batch = writeBatch(db);
-            const macrogamesQuery = await getDocs(collection(db, 'macrogames'));
-            macrogamesQuery.forEach(gameDoc => {
-                const macrogame = gameDoc.data() as Macrogame;
-                const newRewards = macrogame.rewards.filter(r => r.rewardId !== rewardId);
-                if (newRewards.length !== macrogame.rewards.length) {
-                    batch.update(doc(db, 'macrogames', gameDoc.id), { rewards: newRewards });
+            const screensQuery = await getDocs(query(collection(db, 'conversionScreens')));
+            screensQuery.forEach(screenDoc => {
+                const screen = screenDoc.data() as ConversionScreen;
+                if (screen.methodIds.includes(methodId)) {
+                    const newMethodIds = screen.methodIds.filter(id => id !== methodId);
+                    batch.update(screenDoc.ref, { methodIds: newMethodIds });
                 }
             });
             await batch.commit();
-            await deleteDoc(doc(db, 'rewards', rewardId));
+            await deleteDoc(doc(db, 'conversionMethods', methodId));
         }
     };
-    const deleteMultipleRewards = async (ids: string[]) => {
-        if (window.confirm(`Are you sure you want to delete ${ids.length} rewards? This cannot be undone.`)) {
-            // Note: This bulk delete does not currently clean up references in macrogames.
-            // For simplicity, we are deleting directly. A more robust solution would expand this.
+    const deleteMultipleConversionMethods = async (ids: string[]) => {
+        if (window.confirm(`Are you sure you want to delete ${ids.length} methods? This cannot be undone.`)) {
             const batch = writeBatch(db);
-            ids.forEach(id => batch.delete(doc(db, 'rewards', id)));
+            ids.forEach(id => batch.delete(doc(db, 'conversionMethods', id)));
             await batch.commit();
         }
     };
-    const duplicateReward = async (rewardToDuplicate: Reward) => {
-        const { id, name, ...restOfReward } = rewardToDuplicate;
-        const existingNames = new Set(allRewards.map(r => r.name));
+    const duplicateConversionMethod = async (methodToDuplicate: ConversionMethod) => {
+        const { id, name, ...rest } = methodToDuplicate;
+        const existingNames = new Set(allConversionMethods.map(c => c.name));
         const newName = generateUniqueName(name, existingNames);
-        const newRewardData = {
-            ...restOfReward,
-            name: newName,
-            createdAt: new Date().toISOString(),
-            redemptions: 0,
-            conversionRate: 0,
-        };
-        await addDoc(collection(db, 'rewards'), newRewardData);
+        const newData = { ...rest, name: newName, createdAt: new Date().toISOString() };
+        await addDoc(collection(db, 'conversionMethods'), newData);
     };
 
-    const value = {
-        macrogames, popups, campaigns, allRewards, allMicrogames, customMicrogames,
+    // --- Conversion Screen Functions ---
+    const createConversionScreen = async (newScreen: Omit<ConversionScreen, 'id'>) => {
+        await addDoc(collection(db, 'conversionScreens'), newScreen);
+    };
+    const updateConversionScreen = async (screenId: string, updatedScreen: Partial<Omit<ConversionScreen, 'id'>>) => {
+        await updateDoc(doc(db, 'conversionScreens', screenId), updatedScreen);
+    };
+    const deleteConversionScreen = async (screenId: string) => {
+        if (window.confirm("Are you sure? This screen will be unlinked from all macrogames that use it.")) {
+            const batch = writeBatch(db);
+            const macrogamesQuery = await getDocs(query(collection(db, 'macrogames'), where('conversionScreenId', '==', screenId)));
+            macrogamesQuery.forEach(gameDoc => {
+                batch.update(doc(db, 'macrogames', gameDoc.id), { conversionScreenId: null });
+            });
+            await batch.commit();
+            await deleteDoc(doc(db, 'conversionScreens', screenId));
+        }
+    };
+    const duplicateConversionScreen = async (screenToDuplicate: ConversionScreen) => {
+        const { id, name, ...rest } = screenToDuplicate;
+        const existingNames = new Set(allConversionScreens.map(c => c.name));
+        const newName = generateUniqueName(name, existingNames);
+        const newData = { ...rest, name: newName };
+        await addDoc(collection(db, 'conversionScreens'), newData);
+    };
+
+    const value: DataContextType = {
+        macrogames, popups, campaigns, allConversionMethods, allConversionScreens, allMicrogames, customMicrogames,
         createMacrogame, updateMacrogame, deleteMacrogame, deleteMultipleMacrogames,
         duplicateMacrogame, toggleMacrogameFavorite,
         createPopup, deletePopup, deleteMultiplePopups, updatePopup,
         duplicatePopup, togglePopupFavorite,
         saveCustomMicrogame, toggleMicrogameFavorite, deleteCustomMicrogame,
-        createReward, updateReward, deleteReward, deleteMultipleRewards,
-        duplicateReward,
+        createConversionMethod, updateConversionMethod, deleteConversionMethod, deleteMultipleConversionMethods,
+        duplicateConversionMethod,
+        createConversionScreen, updateConversionScreen, deleteConversionScreen, duplicateConversionScreen,
         createCampaign, updateCampaign, updateCampaignStatus, deleteCampaign, duplicateCampaign
     };
 
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
-};
-
-export const useData = () => {
-    const context = useContext(DataContext);
-    if (context === undefined) {
-        throw new Error('useData must be used within a DataProvider');
-    }
-    return context;
 };

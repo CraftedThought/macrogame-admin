@@ -3,7 +3,7 @@
 // This function dynamically imports the code for a microgame.
 // The bundler (Vite) will see this dynamic import and know to code-split these files.
 const loadMicrogame = (gameId: string) => {
-    return import(`./${gameId}.tsx`);
+    return import(`./games/${gameId}.tsx`);
 };
 
 // This function takes an array of microgame IDs and preloads all of them in parallel.

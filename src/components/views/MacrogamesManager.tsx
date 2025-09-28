@@ -3,8 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { styles } from '../../App.styles';
 import { Macrogame, Microgame, CurrentPage, Popup } from '../../types';
-import { useData } from '../../context/DataContext';
-import { USER_SELECTABLE_CATEGORIES, MACROGAME_LENGTH_OPTIONS, NUMBER_OF_GAMES_OPTIONS, NUMBER_OF_REWARDS_OPTIONS, YES_NO_ALL_OPTIONS, MUSIC_OPTIONS, UI_SKINS } from '../../constants';
+import { useData } from '../../hooks/useData';
+import { PRODUCT_CATEGORIES, MACROGAME_LENGTH_OPTIONS, NUMBER_OF_GAMES_OPTIONS, NUMBER_OF_REWARDS_OPTIONS, YES_NO_ALL_OPTIONS, MUSIC_OPTIONS, UI_SKINS } from '../../constants';
 import { PaginatedList } from '../ui/PaginatedList';
 import { hasMacrogameIssues } from '../../utils/helpers';
 import { FilterBar, FilterConfig } from '../ui/FilterBar';
@@ -16,7 +16,7 @@ interface MacrogamesManagerProps {
 }
 
 const StarIcon: React.FC<{ isFavorite: boolean }> = ({ isFavorite }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24"
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
          fill={isFavorite ? '#ffc107' : 'none'}
          stroke={isFavorite ? '#ffc107' : 'currentColor'}
          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -30,7 +30,7 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
     
     const [filters, setFilters] = useState({
         searchTerm: '', themeFilter: 'All', numGamesFilter: 'All', lengthFilter: 'All',
-        numRewardsFilter: 'All', introScreenFilter: 'All', promoScreenFilter: 'All',
+        hasConversionFilter: 'All', introScreenFilter: 'All', promoScreenFilter: 'All',
         customGameFilter: 'All', musicFilter: 'All'
     });
 
@@ -46,30 +46,13 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
         });
     };
     
-    const handlePreview = (macrogame: Macrogame) => {
-        const barebonesSkin = UI_SKINS.find(s => s.id === 'barebones');
-        if (!barebonesSkin) {
-            alert("Preview skin not found.");
-            return;
-        }
-
-        const flowWithDetails = macrogame.flow.map(flowItem => {
-            const baseGame = allMicrogames.find(mg => mg.id === flowItem.microgameId);
-            if (!baseGame || baseGame.isActive === false) return null;
-            if (flowItem.variantId) {
-                const customVariant = customMicrogames.find(v => v.id === flowItem.variantId);
-                const skinDataObject = customVariant?.skinData || {};
-                const customSkinData = Object.keys(skinDataObject).reduce((acc, key) => {
-                    acc[key] = skinDataObject[key].url;
-                    return acc;
-                }, {} as {[key: string]: string});
-                return { ...baseGame, customSkinData };
-            }
-            return { ...baseGame, customSkinData: {} };
-        }).filter((game): game is Microgame & { customSkinData: any } => !!game);
-
-        const previewPopup: Partial<Popup> = { name: `${macrogame.name} - Preview` };
-        const previewConfig = { popup: previewPopup, macrogame: { ...macrogame, flow: flowWithDetails }, rewards: allRewards, skin: barebonesSkin };
+    const handlePreview = (macrogameId: string) => {
+        // We only pass the ID of the macrogame to the preview page.
+        const previewConfig = { 
+            macrogameId: macrogameId,
+            skinId: 'barebones', // The preview will always use the simple barebones skin
+            isPreviewMode: 'full_macrogame'
+        };
         localStorage.setItem('macrogame_preview_data', JSON.stringify(previewConfig));
         window.open('/preview.html', '_blank');
     };
@@ -103,10 +86,9 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
                 return true;
             })
             .filter(game => {
-                if (filters.numRewardsFilter === 'All') return true;
-                const count = game.rewards.length;
-                if (filters.numRewardsFilter === '5+') return count >= 5;
-                return count === parseInt(filters.numRewardsFilter);
+                if (filters.hasConversionFilter === 'All') return true;
+                const hasConversion = !!game.conversionId;
+                return filters.hasConversionFilter === 'Yes' ? hasConversion : !hasConversion;
             })
             .filter(game => {
                 if (filters.introScreenFilter === 'All') return true;
@@ -140,7 +122,7 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
                     {hasAlert && <span style={styles.warningTag}>Needs Attention</span>}
                     <span style={styles.tag}>#{game.category}</span>
                     <span>{game.flow?.length || 0} microgames</span>
-                    <button onClick={() => handlePreview(game)} style={styles.previewButton}>Preview</button>
+                    <button onClick={() => handlePreview(game.id)} style={styles.previewButton}>Preview</button>
                     <button onClick={() => handleDeployMacrogame(game)} style={styles.publishButton} disabled={hasAlert} title={hasAlert ? "Cannot deploy: contains an archived microgame" : ""}>Deploy</button>
                     <button onClick={() => duplicateMacrogame(game)} style={styles.editButton}>Duplicate</button>
                     <button onClick={() => handleEditMacrogame(game)} style={styles.editButton}>Edit</button>
@@ -154,10 +136,10 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
     };
 
     const filterConfig: FilterConfig[] = [
-        { type: 'select', label: 'Theme', options: ['All', ...USER_SELECTABLE_CATEGORIES], stateKey: 'themeFilter' },
+        { type: 'select', label: 'Theme', options: ['All', ...Object.keys(PRODUCT_CATEGORIES)], stateKey: 'themeFilter' },
         { type: 'select', label: '# of Microgames', options: NUMBER_OF_GAMES_OPTIONS, stateKey: 'numGamesFilter' },
         { type: 'select', label: 'Length', options: MACROGAME_LENGTH_OPTIONS, stateKey: 'lengthFilter' },
-        { type: 'select', label: '# of Rewards', options: NUMBER_OF_REWARDS_OPTIONS, stateKey: 'numRewardsFilter' },
+        { type: 'select', label: 'Has Conversion', options: YES_NO_ALL_OPTIONS, stateKey: 'hasConversionFilter' },
         { type: 'select', label: 'Intro Screen', options: YES_NO_ALL_OPTIONS, stateKey: 'introScreenFilter' },
         { type: 'select', label: 'Promo Screen', options: YES_NO_ALL_OPTIONS, stateKey: 'promoScreenFilter' },
         { type: 'select', label: 'Custom Microgame', options: YES_NO_ALL_OPTIONS, stateKey: 'customGameFilter' },
