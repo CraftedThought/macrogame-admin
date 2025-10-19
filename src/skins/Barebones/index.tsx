@@ -3,34 +3,30 @@
 import React, { ReactNode } from 'react';
 import styles from './Barebones.module.css';
 
-// Using light icons as the background is dark
-const MUTE_ICON_LIGHT = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23EEE'%3E%3Cpath d='M3 9v6h4l5 5V4L7 9H3zm13.59 3L15 10.41 16.41 9 18 10.59 19.59 9 21 10.41 19.41 12 21 13.59 19.59 15 18 13.41 16.41 15 15 13.59z'/%3E%3C/svg%3E";
-const UNMUTE_ICON_LIGHT = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23EEE'%3E%3Cpath d='M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z'/%3E%3C/svg%3E";
-const EXIT_ICON_LIGHT = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23EEE'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E";
+// --- ICONS ---
+const MUTE_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23EEE'%3E%3Cpath d='M3 9v6h4l5 5V4L7 9H3zm13.59 3L15 10.41 16.41 9 18 10.59 19.59 9 21 10.41 19.41 12 21 13.59 19.59 15 18 13.41 16.41 15 15 13.59z'/%3E%3C/svg%3E";
+const UNMUTE_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23EEE'%3E%3Cpath d='M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z'/%3E%3C/svg%3E";
+const EXIT_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23EEE'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E";
 
-interface Props {
-  children: ReactNode;
-  isMuted: boolean;
-  onClose: () => void;
-  onMute: () => void;
-  // These are part of the standard skin props but won't be used here.
-  title?: string;
-  subtitle?: string;
-  colorScheme?: string;
+interface BarebonesProps {
+    children: ReactNode;
+    isMuted: boolean;
+    onClose: () => void;
+    onMute: () => void;
+    // These props are unused in Barebones but are included for interface consistency
+    title?: string;
+    subtitle?: string;
+    colorScheme?: string;
 }
 
-const BarebonesSkin: React.FC<Props> = ({ children, isMuted, onClose, onMute }) => {
+const BarebonesSkin: React.FC<BarebonesProps> = ({ children, isMuted, onClose, onMute }) => {
     return (
         <div className={styles.container}>
             <div className={styles.gameArea}>
                 {children}
             </div>
-            <button onClick={onMute} className={styles.muteButton} aria-label="Mute">
-                <img src={isMuted ? MUTE_ICON_LIGHT : UNMUTE_ICON_LIGHT} alt="Mute toggle" />
-            </button>
-            <button onClick={onClose} className={styles.exitButton} aria-label="Close">
-                <img src={EXIT_ICON_LIGHT} alt="Exit" />
-            </button>
+            <button className={styles.exitButton} onClick={onClose}>×</button>
+            <button className={styles.muteButton} onClick={onMute}>{isMuted ? 'UNMUTE' : 'MUTE'}</button>
         </div>
     );
 };

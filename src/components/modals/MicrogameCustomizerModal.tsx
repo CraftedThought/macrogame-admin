@@ -1,6 +1,7 @@
 // src/components/modals/MicrogameCustomizerModal.tsx
 
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { styles } from '../../App.styles';
 import { Microgame, CustomMicrogame } from '../../types';
 import { SKINNABLE_ELEMENTS } from '../../constants';
@@ -30,7 +31,7 @@ export const MicrogameCustomizerModal: React.FC<MicrogameCustomizerModalProps> =
     };
 
     const handleSave = async () => {
-        if (!microgame || !variantName.trim()) { alert('Please provide a name for your custom variant.'); return; }
+        if (!microgame || !variantName.trim()) { toast.error('Please provide a name for your custom variant.'); return; }
         setIsLoading(true);
         const filesToUpload = Object.entries(skinFiles).reduce((acc, [key, file]) => {
             if (file) acc[key] = file;
@@ -41,7 +42,7 @@ export const MicrogameCustomizerModal: React.FC<MicrogameCustomizerModalProps> =
             onClose();
         } catch (error) {
             console.error("Failed to save custom microgame:", error);
-            alert("An error occurred while saving. Please check the console.");
+            toast.error("An error occurred while saving.");
         } finally {
             setIsLoading(false);
         }

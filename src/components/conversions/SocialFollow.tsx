@@ -6,9 +6,10 @@ import { styles } from '../../App.styles';
 
 interface SocialFollowProps {
   method: SocialFollowMethod;
+  onSuccess: () => void;
 }
 
-export const SocialFollow: React.FC<SocialFollowProps> = ({ method }) => {
+export const SocialFollow: React.FC<SocialFollowProps> = ({ method, onSuccess }) => {
   const containerStyle: React.CSSProperties = {
     textAlign: 'center',
     padding: '1rem',
@@ -30,6 +31,12 @@ export const SocialFollow: React.FC<SocialFollowProps> = ({ method }) => {
       padding: '0.5rem 1rem',
   };
 
+  const handleClick = () => {
+    // Explicitly call onSuccess to unlock the next step
+    onSuccess();
+    // The browser will then proceed with the default link navigation
+  };
+
   return (
     <div style={containerStyle}>
       <h4 style={{ margin: 0, fontSize: '1.2em' }}>{method.headline}</h4>
@@ -42,6 +49,7 @@ export const SocialFollow: React.FC<SocialFollowProps> = ({ method }) => {
             target="_blank"
             rel="noopener noreferrer"
             style={socialLinkStyle}
+            onClick={handleClick}
           >
             Follow on {link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
           </a>

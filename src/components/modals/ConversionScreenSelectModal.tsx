@@ -1,8 +1,8 @@
 // src/components/modals/ConversionScreenSelectModal.tsx
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { styles } from '../../App.styles';
-import { ConversionScreen, CurrentPage } from '../../types';
 import { Modal } from '../ui/Modal';
 import { useData } from '../../hooks/useData';
 
@@ -11,10 +11,11 @@ interface ConversionScreenSelectModalProps {
     onClose: () => void;
     currentScreenId: string | null;
     onSave: (screenId: string | null) => void;
-    setCurrentPage: React.Dispatch<React.SetStateAction<CurrentPage>>;
+    isEditing?: boolean;
 }
 
-export const ConversionScreenSelectModal: React.FC<ConversionScreenSelectModalProps> = ({ isOpen, onClose, currentScreenId, onSave, setCurrentPage }) => {
+export const ConversionScreenSelectModal: React.FC<ConversionScreenSelectModalProps> = ({ isOpen, onClose, currentScreenId, onSave, isEditing }) => {
+    const navigate = useNavigate();
     const { allConversionScreens } = useData();
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -29,9 +30,14 @@ export const ConversionScreenSelectModal: React.FC<ConversionScreenSelectModalPr
         onClose();
     };
 
+    const handleCreateNew = () => {
+        onClose();
+        navigate('/conversions');
+    };
+
     const modalFooter = (
         <>
-            <button onClick={() => { onClose(); setCurrentPage({ page: 'conversions' }); }} style={styles.secondaryButton}>Create New Screen</button>
+            {!isEditing && <button onClick={handleCreateNew} style={styles.secondaryButton}>Create New Screen</button>}
             <button onClick={handleSave} style={styles.saveButton}>Save Selection</button>
         </>
     );

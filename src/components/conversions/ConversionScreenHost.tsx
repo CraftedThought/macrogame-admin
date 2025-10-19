@@ -22,7 +22,7 @@ export const ConversionScreenHost: React.FC<ConversionScreenHostProps> = ({ scre
 
   // Memoized list of methods to display, filtered by gating logic
   const visibleMethods = useMemo(() => {
-    return screen.methods
+    return (screen.methods || [])
       .map(screenMethod => {
         // Find the full method data from our context
         const methodData = allConversionMethods.find(m => m.id === screenMethod.methodId);
@@ -66,21 +66,24 @@ export const ConversionScreenHost: React.FC<ConversionScreenHostProps> = ({ scre
       <p style={{ margin: '0 0 20px', fontSize: '1.1em' }}>{screen.bodyText}</p>
 
       <div style={{ flex: 1, overflowY: 'auto', width: '100%' }}>
-        {visibleMethods.map(method => {
+        {visibleMethods.map((method, index) => {
           if (!method) return null;
-          
+
+          // Use the instanceId if it exists, otherwise fall back to the array index.
+          const key = method.instanceId || index;
+
           // Here we render the correct component based on the method type
           switch (method.data.type) {
             case 'coupon_display':
-              return <CouponDisplay key={method.instanceId} method={method.data} />;
+              return <CouponDisplay key={key} method={method.data} onSuccess={() => handleMethodSuccess(method.instanceId)} />;
             case 'email_capture':
-              return <EmailCapture key={method.instanceId} method={method.data} onSuccess={() => handleMethodSuccess(method.instanceId)} />;
+              return <EmailCapture key={key} method={method.data} onSuccess={() => handleMethodSuccess(method.instanceId)} />;
             case 'form_submit':
-                return <FormSubmit key={method.instanceId} method={method.data} onSuccess={() => handleMethodSuccess(method.instanceId)} />;
+                return <FormSubmit key={key} method={method.data} onSuccess={() => handleMethodSuccess(method.instanceId)} />;
             case 'link_redirect':
-              return <LinkRedirect key={method.instanceId} method={method.data} />;
+              return <LinkRedirect key={key} method={method.data} onSuccess={() => handleMethodSuccess(method.instanceId)} />;
             case 'social_follow':
-                return <SocialFollow key={method.instanceId} method={method.data} />;
+                return <SocialFollow key={key} method={method.data} onSuccess={() => handleMethodSuccess(method.instanceId)} />;
             default:
               return null;
           }

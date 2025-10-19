@@ -6,18 +6,24 @@ import { styles } from '../../App.styles';
 
 interface LinkRedirectProps {
   method: LinkRedirectMethod;
+  onSuccess: () => void;
 }
 
-export const LinkRedirect: React.FC<LinkRedirectProps> = ({ method }) => {
+export const LinkRedirect: React.FC<LinkRedirectProps> = ({ method, onSuccess }) => {
   const getUrlWithUtm = () => {
-    if (!method.utmEnabled) {
-      return method.url;
+    if (!method.utmEnabled || !method.url) {
+      return method.url || '#';
     }
-    const url = new URL(method.url);
-    if (method.utmSource) url.searchParams.set('utm_source', method.utmSource);
-    if (method.utmMedium) url.searchParams.set('utm_medium', method.utmMedium);
-    if (method.utmCampaign) url.searchParams.set('utm_campaign', method.utmCampaign);
-    return url.toString();
+    try {
+      const url = new URL(method.url);
+      if (method.utmSource) url.searchParams.set('utm_source', method.utmSource);
+      if (method.utmMedium) url.searchParams.set('utm_medium', method.utmMedium);
+      if (method.utmCampaign) url.searchParams.set('utm_campaign', method.utmCampaign);
+      return url.toString();
+    } catch (error) {
+        console.error("Invalid URL for Link Redirect:", method.url);
+        return '#';
+    }
   };
 
   const containerStyle: React.CSSProperties = {
@@ -26,6 +32,12 @@ export const LinkRedirect: React.FC<LinkRedirectProps> = ({ method }) => {
     width: '100%',
     maxWidth: '400px',
     margin: '1rem auto'
+  };
+
+  const handleClick = () => {
+    // Explicitly call onSuccess to unlock the next step
+    onSuccess();
+    // The browser will then proceed with the default link navigation
   };
 
   return (
@@ -37,6 +49,7 @@ export const LinkRedirect: React.FC<LinkRedirectProps> = ({ method }) => {
         target="_blank"
         rel="noopener noreferrer"
         style={{ ...styles.saveButton, display: 'block', textDecoration: 'none' }}
+        onClick={handleClick}
       >
         {method.buttonText}
       </a>

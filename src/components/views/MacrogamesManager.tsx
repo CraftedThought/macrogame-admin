@@ -1,37 +1,37 @@
 // src/components/views/MacrogamesManager.tsx
 
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { styles } from '../../App.styles';
-import { Macrogame, Microgame, CurrentPage, Popup } from '../../types';
+import { Macrogame } from '../../types';
 import { useData } from '../../hooks/useData';
-import { PRODUCT_CATEGORIES, MACROGAME_LENGTH_OPTIONS, NUMBER_OF_GAMES_OPTIONS, NUMBER_OF_REWARDS_OPTIONS, YES_NO_ALL_OPTIONS, MUSIC_OPTIONS, UI_SKINS } from '../../constants';
+import { PRODUCT_CATEGORIES, MACROGAME_LENGTH_OPTIONS, NUMBER_OF_GAMES_OPTIONS, YES_NO_ALL_OPTIONS, MACROGAME_MUSIC_LIBRARY, UI_SKINS } from '../../constants';
 import { PaginatedList } from '../ui/PaginatedList';
 import { hasMacrogameIssues } from '../../utils/helpers';
 import { FilterBar, FilterConfig } from '../ui/FilterBar';
+import { StarIcon } from '../ui/StarIcon';
 
 interface MacrogamesManagerProps {
     handleDeployMacrogame: (macrogame: Macrogame) => Promise<void>;
     handleEditMacrogame: (macrogame: Macrogame) => void;
-    setCurrentPage: React.Dispatch<React.SetStateAction<CurrentPage>>;
 }
 
-const StarIcon: React.FC<{ isFavorite: boolean }> = ({ isFavorite }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-         fill={isFavorite ? '#ffc107' : 'none'}
-         stroke={isFavorite ? '#ffc107' : 'currentColor'}
-         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-         style={{ cursor: 'pointer', color: '#606770' }}>
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-    </svg>
-);
-
-export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDeployMacrogame, handleEditMacrogame, setCurrentPage }) => {
-    const { macrogames, deleteMacrogame, duplicateMacrogame, toggleMacrogameFavorite, deleteMultipleMacrogames, allMicrogames, customMicrogames, allRewards } = useData();
+export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDeployMacrogame, handleEditMacrogame }) => {
+    const navigate = useNavigate();
+    const { macrogames, deleteMacrogame, duplicateMacrogame, toggleMacrogameFavorite, deleteMultipleMacrogames, allMicrogames, allConversionScreens, allConversionMethods } = useData();
     
+    // ... (rest of the component state and logic is unchanged)
     const [filters, setFilters] = useState({
-        searchTerm: '', themeFilter: 'All', numGamesFilter: 'All', lengthFilter: 'All',
-        hasConversionFilter: 'All', introScreenFilter: 'All', promoScreenFilter: 'All',
-        customGameFilter: 'All', musicFilter: 'All'
+        searchTerm: '',
+        categoryFilter: 'All',
+        subcategoryFilter: 'All',
+        durationFilter: 'All',
+        numGamesFilter: 'All',
+        conversionMethodFilter: 'All',
+        introScreenFilter: 'All',
+        promoScreenFilter: 'All',
+        customGameFilter: 'All',
+        musicFilter: 'All'
     });
 
     const handleFilterChange = (key: string, value: string) => {
@@ -40,17 +40,23 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
 
     const handleResetFilters = () => {
         setFilters({
-            searchTerm: '', themeFilter: 'All', numGamesFilter: 'All', lengthFilter: 'All',
-            numRewardsFilter: 'All', introScreenFilter: 'All', promoScreenFilter: 'All',
-            customGameFilter: 'All', musicFilter: 'All'
+            searchTerm: '',
+            categoryFilter: 'All',
+            subcategoryFilter: 'All',
+            durationFilter: 'All',
+            numGamesFilter: 'All',
+            conversionMethodFilter: 'All',
+            introScreenFilter: 'All',
+            promoScreenFilter: 'All',
+            customGameFilter: 'All',
+            musicFilter: 'All'
         });
     };
     
     const handlePreview = (macrogameId: string) => {
-        // We only pass the ID of the macrogame to the preview page.
         const previewConfig = { 
             macrogameId: macrogameId,
-            skinId: 'barebones', // The preview will always use the simple barebones skin
+            skinId: 'barebones',
             isPreviewMode: 'full_macrogame'
         };
         localStorage.setItem('macrogame_preview_data', JSON.stringify(previewConfig));
@@ -58,19 +64,34 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
     };
 
     const filteredGames = useMemo(() => {
-        const calculateLength = (game: Macrogame): number => {
+        // Helper function to calculate duration
+        const calculateDuration = (game: Macrogame): number => {
             let totalLength = 0;
-            if (game.introScreen.enabled) totalLength += game.introScreen.duration * 1000;
-            if (game.promoScreen?.enabled) totalLength += (game.promoScreen.duration || 0) * 1000;
+            if (game.introScreen.enabled) totalLength += game.introScreen.duration;
+            if (game.promoScreen?.enabled) totalLength += (game.promoScreen.duration || 0);
             const flowLength = game.flow.reduce((sum, flowItem) => {
                 const microgame = allMicrogames.find(mg => mg.id === flowItem.microgameId);
-                return sum + (microgame?.length || 0) * 1000 + game.config.titleScreenDuration + game.config.controlsScreenDuration;
+                return sum + (microgame?.length || 0) + (game.config.titleScreenDuration / 1000) + (game.config.controlsScreenDuration / 1000);
             }, 0);
-            return (totalLength + flowLength) / 1000;
+            return totalLength + flowLength;
         };
+
         return macrogames
             .filter(game => game.name.toLowerCase().includes(filters.searchTerm.toLowerCase()))
-            .filter(game => filters.themeFilter === 'All' || game.category === filters.themeFilter)
+            .filter(game => filters.categoryFilter === 'All' || game.category === filters.categoryFilter)
+            .filter(game => {
+                if (filters.categoryFilter === 'All' || filters.subcategoryFilter === 'All') return true;
+                return game.subcategory === filters.subcategoryFilter;
+            })
+            .filter(game => {
+                if (filters.durationFilter === 'All') return true;
+                const duration = calculateDuration(game);
+                if (filters.durationFilter === 'Short (< 20s)') return duration < 20;
+                if (filters.durationFilter === 'Medium (20s-30s)') return duration >= 20 && duration <= 30;
+                if (filters.durationFilter === 'Long (> 30s)') return duration > 30;
+                return true;
+            })
+            // --- LOGIC FOR numGamesFilter RESTORED ---
             .filter(game => {
                 if (filters.numGamesFilter === 'All') return true;
                 const count = game.flow.length;
@@ -78,17 +99,15 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
                 return count === parseInt(filters.numGamesFilter);
             })
             .filter(game => {
-                if (filters.lengthFilter === 'All') return true;
-                const length = calculateLength(game);
-                if (filters.lengthFilter === 'Short (< 20s)') return length < 20;
-                if (filters.lengthFilter === 'Medium (20s-30s)') return length >= 20 && length <= 30;
-                if (filters.lengthFilter === 'Long (> 30s)') return length > 30;
-                return true;
-            })
-            .filter(game => {
-                if (filters.hasConversionFilter === 'All') return true;
-                const hasConversion = !!game.conversionId;
-                return filters.hasConversionFilter === 'Yes' ? hasConversion : !hasConversion;
+                if (filters.conversionMethodFilter === 'All') return true;
+                const hasConversion = !!game.conversionScreenId;
+                if (filters.conversionMethodFilter === 'None') return !hasConversion;
+
+                const screen = allConversionScreens.find(s => s.id === game.conversionScreenId);
+                if (!screen) return false;
+
+                const methodTypesInScreen = new Set(screen.methods.map(m => allConversionMethods.find(base => base.id === m.methodId)?.type));
+                return methodTypesInScreen.has(filters.conversionMethodFilter);
             })
             .filter(game => {
                 if (filters.introScreenFilter === 'All') return true;
@@ -105,10 +124,10 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
             })
             .filter(game => {
                 if (filters.musicFilter === 'All') return true;
-                if (filters.musicFilter === 'None') return game.config.backgroundMusicUrl === null;
-                return game.config.backgroundMusicUrl === MUSIC_OPTIONS[filters.musicFilter];
+                const selectedTrack = MACROGAME_MUSIC_LIBRARY.find(track => track.name === filters.musicFilter);
+                return game.config.backgroundMusicUrl === (selectedTrack?.path || null);
             });
-    }, [macrogames, filters, allMicrogames, allRewards]);
+    }, [macrogames, filters, allMicrogames, allConversionScreens, allConversionMethods]);
 
     const favoriteGames = filteredGames.filter(g => g.isFavorite);
 
@@ -123,7 +142,7 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
                     <span style={styles.tag}>#{game.category}</span>
                     <span>{game.flow?.length || 0} microgames</span>
                     <button onClick={() => handlePreview(game.id)} style={styles.previewButton}>Preview</button>
-                    <button onClick={() => handleDeployMacrogame(game)} style={styles.publishButton} disabled={hasAlert} title={hasAlert ? "Cannot deploy: contains an archived microgame" : ""}>Deploy</button>
+                    <button onClick={() => handleDeployMacrogame(game)} style={styles.publishButton} disabled={hasAlert} title={hasAlert ? "Cannot deliver: contains an archived microgame" : ""}>Deliver</button>
                     <button onClick={() => duplicateMacrogame(game)} style={styles.editButton}>Duplicate</button>
                     <button onClick={() => handleEditMacrogame(game)} style={styles.editButton}>Edit</button>
                     <button onClick={() => deleteMacrogame(game.id)} style={styles.deleteButton}>Delete</button>
@@ -135,22 +154,39 @@ export const MacrogamesManager: React.FC<MacrogamesManagerProps> = ({ handleDepl
         );
     };
 
-    const filterConfig: FilterConfig[] = [
-        { type: 'select', label: 'Theme', options: ['All', ...Object.keys(PRODUCT_CATEGORIES)], stateKey: 'themeFilter' },
-        { type: 'select', label: '# of Microgames', options: NUMBER_OF_GAMES_OPTIONS, stateKey: 'numGamesFilter' },
-        { type: 'select', label: 'Length', options: MACROGAME_LENGTH_OPTIONS, stateKey: 'lengthFilter' },
-        { type: 'select', label: 'Has Conversion', options: YES_NO_ALL_OPTIONS, stateKey: 'hasConversionFilter' },
-        { type: 'select', label: 'Intro Screen', options: YES_NO_ALL_OPTIONS, stateKey: 'introScreenFilter' },
-        { type: 'select', label: 'Promo Screen', options: YES_NO_ALL_OPTIONS, stateKey: 'promoScreenFilter' },
-        { type: 'select', label: 'Custom Microgame', options: YES_NO_ALL_OPTIONS, stateKey: 'customGameFilter' },
-        { type: 'select', label: 'Background Music', options: ['All', ...Object.keys(MUSIC_OPTIONS)], stateKey: 'musicFilter' },
-    ];
+    const filterConfig = useMemo(() => {
+        const conversionMethodTypes = ['All', 'None', ...new Set(allConversionMethods.map(m => m.type))];
 
+        const config: FilterConfig[] = [
+            { type: 'select', label: 'Product Category', options: ['All', ...Object.keys(PRODUCT_CATEGORIES)], stateKey: 'categoryFilter' },
+            // Subcategory will be inserted here if needed
+            { type: 'select', label: 'Duration', options: MACROGAME_LENGTH_OPTIONS, stateKey: 'durationFilter' },
+            { type: 'select', label: '# of Microgames', options: NUMBER_OF_GAMES_OPTIONS, stateKey: 'numGamesFilter' },
+            { type: 'select', label: 'Conversion Method', options: conversionMethodTypes, stateKey: 'conversionMethodFilter' },
+            { type: 'select', label: 'Intro Screen', options: YES_NO_ALL_OPTIONS, stateKey: 'introScreenFilter' },
+            { type: 'select', label: 'Promo Screen', options: YES_NO_ALL_OPTIONS, stateKey: 'promoScreenFilter' },
+            { type: 'select', label: 'Custom Microgame', options: YES_NO_ALL_OPTIONS, stateKey: 'customGameFilter' },
+            { type: 'select', label: 'Background Music', options: ['All', ...MACROGAME_MUSIC_LIBRARY.map(track => track.name)], stateKey: 'musicFilter' },
+        ];
+
+        // If a specific product category is selected, add the subcategory filter right after it
+        if (filters.categoryFilter !== 'All' && PRODUCT_CATEGORIES[filters.categoryFilter]) {
+            config.splice(1, 0, {
+                type: 'select',
+                label: 'Subcategory',
+                options: ['All', ...PRODUCT_CATEGORIES[filters.categoryFilter]],
+                stateKey: 'subcategoryFilter'
+            });
+        }
+
+        return config;
+    }, [filters.categoryFilter, allConversionMethods]);
+    
     return (
         <div style={styles.creatorSection}>
             <div style={styles.managerHeader}>
                 <h2 style={styles.h2}>Macrogames</h2>
-                <button onClick={() => setCurrentPage({ page: 'creator' })} style={styles.saveButton}>Create New</button>
+                <button onClick={() => navigate('/creator')} style={styles.saveButton}>Create New</button>
             </div>
             
             <div style={styles.filterContainer}>

@@ -1,5 +1,10 @@
 // src/types/index.ts
 
+export type EntityStatus = {
+  code: 'ok' | 'warning' | 'error';
+  message: string;
+}
+
 // Represents a UI skin that can be applied to a popup.
 export interface UISkin {
   id: string;
@@ -13,8 +18,10 @@ export interface ScreenConfig {
   enabled: boolean;
   text: string;
   duration: number; // in seconds
-  backgroundImageUrl?: string;
   clickToContinue: boolean;
+  backgroundImageUrl?: string;
+  spotlightImageUrl?: string;
+  spotlightImageLayout?: 'left' | 'right' | 'top' | 'bottom';
 }
 
 // Configuration options for a single Macrogame.
@@ -38,12 +45,14 @@ export interface Macrogame {
   conversionGoal?: string;
   gameplayExperience?: 'Rehearsal' | 'Generalized';
   category: string;
+  subcategory?: string;
   createdAt: string;
   config: MacrogameConfig;
   introScreen: ScreenConfig;
   promoScreen: ScreenConfig;
   flow: MacrogameFlowItem[];
   conversionScreenId: string | null; // ID of the linked Conversion Screen
+  audioConfig?: { [key: string]: { playMusic: boolean; musicId?: string | null } };
   type: 'default' | 'wizard';
   isFavorite?: boolean;
 }
@@ -170,6 +179,7 @@ export interface CouponDisplayMethod extends ConversionMethodBase {
   dynamicCodeListId?: string; // ID linking to a list of unique codes
   discountType: 'percentage' | 'fixed_amount';
   discountValue: number;
+  clickToReveal?: boolean;
 }
 
 export interface SocialFollowMethod extends ConversionMethodBase {
@@ -187,6 +197,7 @@ export type ConversionMethod = EmailCaptureMethod | FormSubmitMethod | LinkRedir
 export interface ConversionScreen {
   id: string;
   name: string; // Internal name for management
+  status?: EntityStatus;
 
   // Content & Styling
   headline: string;

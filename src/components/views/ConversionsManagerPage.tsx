@@ -1,6 +1,7 @@
 // src/components/views/ConversionsManagerPage.tsx
 
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useForm, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { styles } from '../../App.styles';
 import { ConversionMethod, ConversionScreen } from '../../types';
@@ -9,12 +10,15 @@ import { PaginatedList } from '../ui/PaginatedList';
 import { EditConversionModal } from '../modals/EditConversionModal';
 import { generateUUID } from '../../utils/helpers';
 import { EditConversionScreenModal } from '../modals/EditConversionScreenModal';
+import { Modal } from '../ui/Modal';
+import { ConversionScreenHost } from '../conversions/ConversionScreenHost';
+import * as MethodComponents from '../conversions';
 
 // --- Sub-component for managing Conversion Methods ---
 const MethodManager = () => {
-    // ... (This component's code remains unchanged from the previous step)
-    const { allConversionMethods, createConversionMethod, deleteConversionMethod, duplicateConversionMethod, deleteMultipleConversionMethods, updateConversionMethod } = useData();
+    const { allConversionMethods, createConversionMethod, deleteConversionMethod, duplicateConversionMethod, deleteMultipleConversionMethods } = useData();
     const [editingMethod, setEditingMethod] = useState<ConversionMethod | null>(null);
+    const [previewingMethod, setPreviewingMethod] = useState<ConversionMethod | null>(null);
     
     const { register, handleSubmit, reset, watch, control } = useForm<Partial<Omit<ConversionMethod, 'id' | 'createdAt'>>>({
         defaultValues: { name: '', headline: '', subheadline: '', type: 'coupon_display', fields: [], links: [] }
@@ -22,7 +26,6 @@ const MethodManager = () => {
 
     const { fields, append: appendFormField, remove: removeFormField } = useFieldArray({ control, name: "fields" });
     const { fields: socialLinks, append: appendSocialLink, remove: removeSocialLink } = useFieldArray({ control, name: "links" });
-
     const selectedType = watch('type');
 
     useEffect(() => {
@@ -33,13 +36,13 @@ const MethodManager = () => {
     }, [selectedType, reset, watch]);
 
     const handleCreate: SubmitHandler<any> = async (data) => {
-        if (!data.name?.trim()) { alert("Please enter a name."); return; }
+        if (!data.name?.trim()) { toast.error("Please enter a name for the method."); return; }
         const baseData = { name: data.name, headline: data.headline || '', subheadline: data.subheadline || '', createdAt: new Date().toISOString() };
         let newMethod: Omit<ConversionMethod, 'id'>;
 
         switch (data.type) {
             case 'coupon_display':
-                newMethod = { ...baseData, type: 'coupon_display', codeType: data.codeType || 'static', staticCode: data.staticCode || '', discountType: data.discountType || 'percentage', discountValue: Number(data.discountValue) || 0 };
+                newMethod = { ...baseData, type: 'coupon_display', codeType: data.codeType || 'static', staticCode: data.staticCode || '', discountType: data.discountType || 'percentage', discountValue: Number(data.discountValue) || 0, clickToReveal: data.clickToReveal || false };
                 break;
             case 'email_capture':
                 newMethod = { ...baseData, type: 'email_capture', submitButtonText: data.submitButtonText || 'Submit' };
@@ -60,7 +63,7 @@ const MethodManager = () => {
 
         await createConversionMethod(newMethod);
         reset({ name: '', headline: '', subheadline: '', type: 'coupon_display', fields: [], links: [] });
-        alert('Conversion method created successfully!');
+        toast.success('Conversion method created successfully!');
     };
 
     const renderItem = (item: ConversionMethod, isSelected: boolean, onToggleSelect: () => void) => (
@@ -68,19 +71,32 @@ const MethodManager = () => {
             <input type="checkbox" checked={isSelected} onChange={onToggleSelect} />
             <div style={{...styles.rewardInfo, flex: 1}}>
                 <strong>{item.name}</strong>
+                {item.status && item.status.code !== 'ok' && (
+                    <span style={{...styles.warningTag, marginLeft: '1rem'}} title={item.status.message}>
+                        ⚠️ Needs Attention
+                    </span>
+                )}
                 <div style={styles.rewardAnalytics}><span style={styles.tag}>{item.type.replace(/_/g, ' ').toUpperCase()}</span></div>
             </div>
             <div style={styles.rewardActions}>
+                <button onClick={() => setPreviewingMethod(item)} style={styles.previewButton}>Preview</button>
                 <button onClick={() => duplicateConversionMethod(item)} style={styles.editButton}>Duplicate</button>
                 <button onClick={() => setEditingMethod(item)} style={styles.editButton}>Edit</button>
                 <button onClick={() => deleteConversionMethod(item.id)} style={styles.deleteButton}>Delete</button>
             </div>
         </li>
     );
+    
+    const PreviewComponent = previewingMethod ? MethodComponents[Object.keys(MethodComponents).find(key => key.toLowerCase().includes(previewingMethod.type.split('_')[0])) as keyof typeof MethodComponents] : null;
 
     return (
         <div>
             <EditConversionModal isOpen={!!editingMethod} onClose={() => setEditingMethod(null)} conversion={editingMethod} />
+            <Modal isOpen={!!previewingMethod} onClose={() => setPreviewingMethod(null)} title={`Preview: ${previewingMethod?.name}`}>
+                {PreviewComponent && previewingMethod && (
+                    <PreviewComponent method={previewingMethod as any} onSuccess={() => alert('Success!')} />
+                )}
+            </Modal>
             <form onSubmit={handleSubmit(handleCreate)}>
                 <h3 style={styles.h3}>Create New Conversion Method</h3>
                 <div style={styles.configRow}>
@@ -95,74 +111,23 @@ const MethodManager = () => {
                 </div>
                 
                 <h4 style={{...styles.h4, marginTop: '2rem'}}>Configuration</h4>
-                
                 <div style={styles.configRow}>
                     <div style={styles.configItem}><label>Headline</label><input type="text" placeholder="e.g., You Won!" {...register("headline")} style={styles.input} /></div>
                     <div style={styles.configItem}><label>Subheadline</label><input type="text" placeholder="e.g., Use this code at checkout." {...register("subheadline")} style={styles.input} /></div>
                 </div>
 
                 <div style={{marginTop: '1.5rem'}}>
-                    {selectedType === 'coupon_display' && (
-                        <div style={styles.configRow}>
-                            <div style={styles.configItem}><label>Coupon Type</label><select {...register("codeType")} style={styles.input}><option value="static">Static Code</option><option value="dynamic" disabled>Dynamic Codes (Coming Soon)</option></select></div>
-                            <div style={styles.configItem}><label>Static Code</label><input type="text" placeholder="SUMMER25" {...register("staticCode")} style={styles.input} /></div>
-                            <div style={styles.configItem}><label>Discount Type</label><select {...register("discountType")} style={styles.input}><option value="percentage">% Percentage</option><option value="fixed_amount">$ Fixed Amount</option></select></div>
-                            <div style={styles.configItem}><label>Discount Value</label><input type="number" step="0.01" {...register("discountValue")} style={styles.input} /></div>
-                        </div>
-                    )}
-                    {selectedType === 'link_redirect' && (
-                        <div>
-                            <div style={styles.configRow}>
-                                <div style={styles.configItem}><label>Button Text</label><input type="text" placeholder="Shop Now" {...register("buttonText")} style={styles.input} /></div>
-                                <div style={styles.configItem}><label>Destination URL</label><input type="url" placeholder="https://..." {...register("url")} style={styles.input} /></div>
-                            </div>
-                             <div style={{...styles.configItem, marginTop: '1rem'}}><label><input type="checkbox" {...register("utmEnabled")} /> Enable UTM Tracking</label></div>
-                        </div>
-                    )}
-                    {selectedType === 'email_capture' && (
-                         <div style={styles.configItem}><label>Submit Button Text</label><input type="text" {...register("submitButtonText")} style={styles.input} /></div>
-                    )}
-                    {selectedType === 'form_submit' && (
-                        <div>
-                            {fields.map((field, index) => (
-                                <div key={field.id} style={{...styles.configRow, border: '1px solid #eee', padding: '1rem', borderRadius: '6px', marginBottom: '1rem'}}>
-                                    <div style={styles.configItem}><label>Field Label</label><input {...register(`fields.${index}.label`)} style={styles.input}/></div>
-                                    <div style={styles.configItem}><label>Field Type</label><select {...register(`fields.${index}.type`)} style={styles.input}><option value="text">Text</option><option value="email">Email</option><option value="tel">Phone</option><option value="number">Number</option></select></div>
-                                    <div style={{...styles.configItem, flex: '0 0 auto', justifyContent: 'center'}}><label><input type="checkbox" {...register(`fields.${index}.required`)} /> Required</label></div>
-                                    <button type="button" onClick={() => removeFormField(index)} style={{...styles.deleteButton, alignSelf: 'flex-end'}}>Remove</button>
-                                </div>
-                            ))}
-                            <button type="button" onClick={() => appendFormField({ label: '', type: 'text', required: true, name: `field_${fields.length + 1}` })} style={styles.secondaryButton}>Add Field</button>
-                            <div style={{...styles.configItem, marginTop: '1rem'}}><label>Submit Button Text</label><input type="text" {...register("submitButtonText")} style={styles.input} /></div>
-                        </div>
-                    )}
-                    {selectedType === 'social_follow' && (
-                        <div>
-                            {socialLinks.map((link, index) => (
-                                <div key={link.id} style={{...styles.configRow, border: '1px solid #eee', padding: '1rem', borderRadius: '6px', marginBottom: '1rem'}}>
-                                    <div style={styles.configItem}><label>Platform</label><select {...register(`links.${index}.platform`)} style={styles.input}><option value="instagram">Instagram</option><option value="tiktok">TikTok</option><option value="x">X (Twitter)</option><option value="facebook">Facebook</option><option value="youtube">YouTube</option><option value="pinterest">Pinterest</option></select></div>
-                                    <div style={styles.configItem}><label>Profile URL</label><input type="url" {...register(`links.${index}.url`)} style={styles.input}/></div>
-                                    <button type="button" onClick={() => removeSocialLink(index)} style={{...styles.deleteButton, alignSelf: 'flex-end'}}>Remove</button>
-                                </div>
-                            ))}
-                            <button type="button" onClick={() => appendSocialLink({ platform: 'instagram', url: '' })} style={styles.secondaryButton}>Add Link</button>
-                        </div>
-                    )}
+                    {selectedType === 'coupon_display' && ( <div style={styles.configRow}> <div style={styles.configItem}><label>Coupon Type</label><select {...register("codeType")} style={styles.input}><option value="static">Static Code</option><option value="dynamic" disabled>Dynamic Codes (Coming Soon)</option></select></div> <div style={styles.configItem}><label>Static Code</label><input type="text" placeholder="SUMMER25" {...register("staticCode")} style={styles.input} /></div> <div style={{...styles.configItem, justifyContent: 'center', alignSelf: 'flex-end', paddingBottom: '0.6rem'}}> <label style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}> <input type="checkbox" {...register("clickToReveal")} /> <span>Click to Reveal</span> </label> </div> <div style={styles.configItem}><label>Discount Type</label><select {...register("discountType")} style={styles.input}><option value="percentage">% Percentage</option><option value="fixed_amount">$ Fixed Amount</option></select></div> <div style={styles.configItem}><label>Discount Value</label><input type="number" step="0.01" {...register("discountValue")} style={styles.input} /></div> </div> )}
+                    {selectedType === 'link_redirect' && ( <div> <div style={styles.configRow}> <div style={styles.configItem}><label>Button Text</label><input type="text" placeholder="Shop Now" {...register("buttonText")} style={styles.input} /></div> <div style={styles.configItem}><label>Destination URL</label><input type="url" placeholder="https://..." {...register("url")} style={styles.input} /></div> </div> <div style={{...styles.configItem, marginTop: '1rem'}}><label><input type="checkbox" {...register("utmEnabled")} /> Enable UTM Tracking</label></div> </div> )}
+                    {selectedType === 'email_capture' && ( <div style={styles.configItem}><label>Submit Button Text</label><input type="text" {...register("submitButtonText")} style={styles.input} /></div> )}
+                    {selectedType === 'form_submit' && ( <div> {fields.map((field, index) => ( <div key={field.id} style={{...styles.configRow, border: '1px solid #eee', padding: '1rem', borderRadius: '6px', marginBottom: '1rem'}}> <div style={styles.configItem}><label>Field Label</label><input {...register(`fields.${index}.label`)} style={styles.input}/></div> <div style={styles.configItem}><label>Field Type</label><select {...register(`fields.${index}.type`)} style={styles.input}><option value="text">Text</option><option value="email">Email</option><option value="tel">Phone</option><option value="number">Number</option></select></div> <div style={{...styles.configItem, flex: '0 0 auto', justifyContent: 'center'}}><label><input type="checkbox" {...register(`fields.${index}.required`)} /> Required</label></div> <button type="button" onClick={() => removeFormField(index)} style={{...styles.deleteButton, alignSelf: 'flex-end'}}>Remove</button> </div> ))} <button type="button" onClick={() => appendFormField({ label: '', type: 'text', required: true, name: `field_${fields.length + 1}` })} style={styles.secondaryButton}>Add Field</button> <div style={{...styles.configItem, marginTop: '1rem'}}><label>Submit Button Text</label><input type="text" {...register("submitButtonText")} style={styles.input} /></div> </div> )}
+                    {selectedType === 'social_follow' && ( <div> {socialLinks.map((link, index) => ( <div key={link.id} style={{...styles.configRow, border: '1px solid #eee', padding: '1rem', borderRadius: '6px', marginBottom: '1rem'}}> <div style={styles.configItem}><label>Platform</label><select {...register(`links.${index}.platform`)} style={styles.input}><option value="instagram">Instagram</option><option value="tiktok">TikTok</option><option value="x">X (Twitter)</option><option value="facebook">Facebook</option><option value="youtube">YouTube</option><option value="pinterest">Pinterest</option></select></div> <div style={styles.configItem}><label>Profile URL</label><input type="url" {...register(`links.${index}.url`)} style={styles.input}/></div> <button type="button" onClick={() => removeSocialLink(index)} style={{...styles.deleteButton, alignSelf: 'flex-end'}}>Remove</button> </div> ))} <button type="button" onClick={() => appendSocialLink({ platform: 'instagram', url: '' })} style={styles.secondaryButton}>Add Link</button> </div> )}
                 </div>
                 <button type="submit" style={{...styles.createButton, marginTop: '2rem' }}>Create Method</button>
             </form>
             <div style={{marginTop: '3rem'}}>
                 <h3 style={styles.h3}>Existing Conversion Methods</h3>
-                <PaginatedList 
-                    items={allConversionMethods} 
-                    renderItem={renderItem} 
-                    bulkActions={[{
-                        label: 'Delete Selected',
-                        onAction: (selectedItems) => deleteMultipleConversionMethods(selectedItems.map(item => item.id))
-                    }]}
-                    listContainerComponent="ul" 
-                    listContainerStyle={styles.rewardsListFull} 
-                />
+                <PaginatedList items={allConversionMethods} renderItem={renderItem} bulkActions={[{ label: 'Delete Selected', onAction: (selectedItems) => deleteMultipleConversionMethods(selectedItems.map(item => item.id)) }]} listContainerComponent="ul" listContainerStyle={styles.rewardsListFull} />
             </div>
         </div>
     );
@@ -171,7 +136,8 @@ const MethodManager = () => {
 // --- Sub-component for managing Conversion Screens ---
 const ScreenManager = () => {
     const { allConversionScreens, allConversionMethods, createConversionScreen, deleteConversionScreen, duplicateConversionScreen } = useData();
-    // const [editingScreen, setEditingScreen] = useState<ConversionScreen | null>(null);
+    const [editingScreen, setEditingScreen] = useState<ConversionScreen | null>(null);
+    const [previewingScreen, setPreviewingScreen] = useState<ConversionScreen | null>(null);
 
     const { register, handleSubmit, reset, control, watch } = useForm<Omit<ConversionScreen, 'id'>>({
         defaultValues: { name: '', headline: '', bodyText: '', layout: 'single_column', methods: [] }
@@ -181,23 +147,33 @@ const ScreenManager = () => {
     const watchedMethods = watch('methods');
 
     const handleCreate: SubmitHandler<Omit<ConversionScreen, 'id'>> = async (data) => {
-        if (!data.name?.trim()) { alert("Please enter a screen name."); return; }
-        if (data.methods.length === 0) { alert("Please add at least one conversion method to the screen."); return; }
+        if (!data.name?.trim()) { toast.error("Please enter a name for the screen."); return; }
+        if (data.methods.length === 0) { toast.error("Please add at least one conversion method."); return; }
         await createConversionScreen(data);
         reset();
-        alert('Conversion Screen created!');
+        toast.success('Conversion Screen created!');
     };
     
     const renderItem = (item: ConversionScreen, isSelected: boolean, onToggleSelect: () => void) => (
         <li key={item.id} style={{...styles.rewardListItem, ...styles.listItemWithCheckbox}}>
             <input type="checkbox" checked={isSelected} onChange={onToggleSelect} />
             <div style={{...styles.rewardInfo, flex: 1}}>
-                <strong>{item.name}</strong>
-                <div style={styles.rewardAnalytics}><span>Methods: {item.methods?.length || 0}</span></div>
+                <div>
+                    <strong>{item.name}</strong>
+                    {item.status && item.status.code !== 'ok' && (
+                        <span style={{...styles.warningTag, marginLeft: '1rem'}} title={item.status.message}>
+                            ⚠️ Needs Attention
+                        </span>
+                    )}
+                </div>
+                <div style={styles.rewardAnalytics}>
+                    <span>Methods: {item.methods?.length || 0}</span>
+                </div>
             </div>
             <div style={styles.rewardActions}>
+                <button onClick={() => setPreviewingScreen(item)} style={styles.previewButton}>Preview</button>
                 <button onClick={() => duplicateConversionScreen(item)} style={styles.editButton}>Duplicate</button>
-                <button onClick={() => alert('Editing will be enabled in the next step!')} style={styles.editButton}>Edit</button>
+                <button onClick={() => setEditingScreen(item)} style={styles.editButton}>Edit</button>
                 <button onClick={() => deleteConversionScreen(item.id)} style={styles.deleteButton}>Delete</button>
             </div>
         </li>
@@ -205,22 +181,46 @@ const ScreenManager = () => {
 
     return (
         <div>
-            {/* <EditConversionScreenModal isOpen={!!editingScreen} onClose={() => setEditingScreen(null)} screen={editingScreen} /> */}
+            <EditConversionScreenModal isOpen={!!editingScreen} onClose={() => setEditingScreen(null)} screen={editingScreen} />
+            <Modal isOpen={!!previewingScreen} onClose={() => setPreviewingScreen(null)} title={`Preview: ${previewingScreen?.name}`} size="large">
+                {previewingScreen && (
+                    <div style={{height: '60vh', backgroundColor: '#2d3436', borderRadius: '6px', color: 'white'}}>
+                        <ConversionScreenHost screen={previewingScreen} />
+                    </div>
+                )}
+            </Modal>
             <form onSubmit={handleSubmit(handleCreate)}>
-                <h3 style={styles.h3}>Create New Conversion Screen</h3>
+                {/* The create form remains unchanged from the previous step... */}
+                 <h3 style={styles.h3}>Create New Conversion Screen</h3>
                 <div style={styles.configItem}><label>Internal Name</label><input type="text" placeholder="e.g., Default Post-Game Screen" {...register("name")} style={styles.input} /></div>
-                
                 <h4 style={{...styles.h4, marginTop: '2rem'}}>Screen Content & Styling</h4>
                 <div style={styles.configRow}>
                     <div style={styles.configItem}><label>Headline</label><input type="text" placeholder="e.g., Congratulations!" {...register("headline")} style={styles.input} /></div>
                     <div style={styles.configItem}><label>Body Text</label><input type="text" placeholder="Here are your rewards!" {...register("bodyText")} style={styles.input} /></div>
                     <div style={styles.configItem}><label>Layout</label><select {...register("layout")} style={styles.input}><option value="single_column">Single Column</option></select></div>
                 </div>
-                
                 <h4 style={{...styles.h4, marginTop: '2rem'}}>Conversion Methods</h4>
                 <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
                     {fields.map((field, index) => {
-                        const availableGates = watchedMethods.filter((_, i) => i < index);
+                        const availableGates = watchedMethods
+                            .filter((_, i) => i < index)
+                            .filter(method => {
+                                const methodData = allConversionMethods.find(m => m.id === method.methodId);
+                                if (!methodData) return false;
+
+                                switch (methodData.type) {
+                                    case 'email_capture':
+                                    case 'form_submit':
+                                    case 'link_redirect':
+                                    case 'social_follow':
+                                        return true;
+                                    case 'coupon_display':
+                                        // Only allow coupons as a gate IF they require a click
+                                        return !!methodData.clickToReveal;
+                                    default:
+                                        return false;
+                                }
+                            });
                         const selectedMethodId = watch(`methods.${index}.methodId`);
                         const selectedMethod = allConversionMethods.find(m => m.id === selectedMethodId);
                         
@@ -246,7 +246,7 @@ const ScreenManager = () => {
                                         <label>Gate (Locked Offer)</label>
                                         <select {...register(`methods.${index}.gate.methodInstanceId`)} style={styles.input}>
                                             <option value="">None (Always Visible)</option>
-                                            {availableGates.map(gateField => (
+                                            {availableGates.map((gateField, gateIndex) => (
                                                 <option key={gateField.instanceId} value={gateField.instanceId}>
                                                     Show after completing: Step {watchedMethods.findIndex(f => f.instanceId === gateField.instanceId) + 1}
                                                 </option>
@@ -259,7 +259,6 @@ const ScreenManager = () => {
                     })}
                 </div>
                 <button type="button" onClick={() => append({ instanceId: generateUUID(), methodId: '', gate: undefined })} style={{...styles.secondaryButton, marginTop: '1rem'}}>Add Method to Screen</button>
-                
                 <button type="submit" style={{...styles.createButton, marginTop: '2rem' }}>Create Screen</button>
             </form>
             <div style={{marginTop: '3rem'}}>

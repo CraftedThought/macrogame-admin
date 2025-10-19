@@ -4,8 +4,8 @@
   position: relative;
   width: 650px;
   height: 450px;
-  background-color: #1c1e21; /* A neutral dark background */
-  padding: 50px; /* Provides space for buttons and breathing room */
+  background-color: #1c1e21;
+  padding: 50px;
   border-radius: 8px;
   box-sizing: border-box;
   display: flex;
@@ -17,25 +17,26 @@
   width: 100%;
   height: 100%;
   position: relative;
-  background-color: #080817; /* Matches the default game area color */
+  background-color: #080817;
 }
 
-.muteButton, .exitButton {
+.exitButton, .muteButton {
   position: absolute;
-  z-index: 3;
-  cursor: pointer;
-  width: 33px;
-  height: 33px;
-  border-radius: 50%;
+  z-index: 2;
+  padding: 0;
   border: none;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #333333; /* Matches Tablet (black) */
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.muteButton:hover, .exitButton:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+.exitButton:hover, .muteButton:hover {
+  background-color: #444444;
 }
 
 .exitButton {
@@ -45,5 +46,10 @@
 
 .muteButton {
   top: 10px;
-  right: 50px;
+  right: 42px;
+}
+
+.exitButton img, .muteButton img {
+  width: 16px;
+  height: 16px;
 }

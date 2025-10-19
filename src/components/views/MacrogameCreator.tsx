@@ -1,26 +1,28 @@
 // src/components/views/MacrogameCreator.tsx
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { styles } from '../../App.styles';
-import { Macrogame, CurrentPage } from '../../types';
+import { Macrogame, Microgame } from '../../types';
 import { useData } from '../../hooks/useData';
 import { MacrogameForm } from './MacrogameForm';
 
 interface MacrogameCreatorProps {
-    setCurrentPage: React.Dispatch<React.SetStateAction<CurrentPage>>;
     onLaunchWizard: (data: object) => void;
     flowFromWizard: Microgame[] | null;
     onClearWizardFlow: () => void;
 }
 
-export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ setCurrentPage, onLaunchWizard, flowFromWizard, onClearWizardFlow }) => {
+export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ onLaunchWizard, flowFromWizard, onClearWizardFlow }) => {
+    const navigate = useNavigate();
     const { macrogames, createMacrogame } = useData();
+    const [formKey, setFormKey] = useState(0);
     const [listPage, setListPage] = useState(1);
     const ITEMS_PER_PAGE = 5;
 
     const handleSave = async (newMacrogame: Omit<Macrogame, 'id' | 'type'> & { id: string | null }) => {
         await createMacrogame(newMacrogame);
-        alert('Macrogame created successfully!');
+        setFormKey(prevKey => prevKey + 1);
     };
 
     const sortedMacrogames = [...macrogames].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -29,12 +31,11 @@ export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ setCurrentPa
 
     return (
         <>
-            <MacrogameForm onSave={handleSave} setCurrentPage={setCurrentPage} onLaunchWizard={onLaunchWizard} flowFromWizard={flowFromWizard} onClearWizardFlow={onClearWizardFlow} />
-
+            <MacrogameForm key={formKey} onSave={handleSave} onLaunchWizard={onLaunchWizard} flowFromWizard={flowFromWizard} onClearWizardFlow={onClearWizardFlow} />
             <div>
                 <div style={styles.managerHeader}>
                     <h2 style={styles.h2}>Recently Created Macrogames</h2>
-                    <button onClick={() => setCurrentPage({ page: 'manager' })} style={styles.secondaryButton}>Manage All</button>
+                    <button onClick={() => navigate('/manager')} style={styles.secondaryButton}>Manage All</button>
                 </div>
                 {paginatedMacrogames.map(game => (
                     <div key={game.id} style={styles.listItem}>
@@ -53,7 +54,6 @@ export const MacrogameCreator: React.FC<MacrogameCreatorProps> = ({ setCurrentPa
                     </div>
                 )}
             </div>
-            
             <div style={{ height: '30px' }}></div>
         </>
     );

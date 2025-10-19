@@ -15,6 +15,9 @@
 
 .gameArea {
   position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   top: 90px;
   left: 65px;
   width: 545px;

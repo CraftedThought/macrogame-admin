@@ -1,7 +1,9 @@
 // src/App.tsx
 
 import React, { useState } from 'react';
-import { Macrogame, Microgame, Popup, CurrentPage, CustomMicrogame } from './types';
+import { Toaster } from 'react-hot-toast';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { Macrogame, Microgame, Popup, CustomMicrogame } from './types';
 import { styles } from './App.styles';
 import { useData } from './hooks/useData';
 
@@ -11,7 +13,6 @@ import { MacrogameCreator } from './components/views/MacrogameCreator';
 import { MacrogamesManager } from './components/views/MacrogamesManager';
 import { MicrogamesPage } from './components/views/MicrogamesPage';
 import { DeliveryManager } from './components/views/DeliveryManager';
-import { EditRewardModal } from './components/modals/EditRewardModal';
 import { CampaignsManager } from './components/views/CampaignsManager';
 import { ConversionsManagerPage } from './components/views/ConversionsManagerPage';
 import { MacrogameForm } from './components/views/MacrogameForm';
@@ -21,8 +22,9 @@ import { MicrogameCustomizerModal } from './components/modals/MicrogameCustomize
 import { MacrogameWizardModal } from './components/wizards/MacrogameWizardModal';
 
 export default function App() {
-    // UI state management
-    const [currentPage, setCurrentPage] = useState<CurrentPage>({ page: 'creator' });
+    const navigate = useNavigate();
+    
+    // UI state management for modals
     const [editingMacrogame, setEditingMacrogame] = useState<Macrogame | null>(null);
     const [editingPopup, setEditingPopup] = useState<Popup | null>(null);
     const [customizingMicrogame, setCustomizingMicrogame] = useState<{ baseGame: Microgame, variant?: CustomMicrogame } | null>(null);
@@ -38,7 +40,7 @@ export default function App() {
         };
         try {
             await createPopup(newPopup);
-            setCurrentPage({ page: 'popups' });
+            navigate('/delivery', { state: { defaultTab: 'Unconfigured' } });
         } catch (error) { console.error("Error creating popup:", error); }
     };
 
@@ -52,11 +54,10 @@ export default function App() {
             <MacrogameWizardModal 
                 isOpen={!!wizardData} 
                 onClose={() => setWizardData(null)}
-                setCurrentPage={setCurrentPage}
                 initialData={wizardData}
                 onContinue={(newFlow) => {
                     setFlowFromWizard(newFlow);
-                    setWizardData(null); // Close the modal
+                    setWizardData(null);
                 }}
             />
 
@@ -68,24 +69,19 @@ export default function App() {
                 footer={(
                     <>
                         <button type="button" onClick={() => setEditingMacrogame(null)} style={styles.secondaryButton}>Cancel</button>
-                        {/* This button finds and clicks the hidden save button inside the form */}
                         <button type="button" onClick={() => document.getElementById('macrogame-form-save-button')?.click()} style={styles.saveButton}>Save Changes</button>
                     </>
                 )}
             >
-                {/* [FIX APPLIED] The MacrogameForm is now rendered unconditionally. 
-                  Its internal useEffect hook will handle populating data when 'existingMacrogame' prop changes from null to a Macrogame object.
-                  This avoids the expensive component mounting operation that was causing the scroll-lock race condition.
-                */}
                 <MacrogameForm
                     existingMacrogame={editingMacrogame}
                     onSave={handleUpdateAndCloseMacrogame}
-                    setCurrentPage={setCurrentPage}
                     onLaunchWizard={(data) => setWizardData(data)}
                     flowFromWizard={flowFromWizard}
                     onClearWizardFlow={() => setFlowFromWizard(null)}
                 />
             </Modal>
+            
             <PopupEditorModal
                 isOpen={!!editingPopup}
                 onClose={() => setEditingPopup(null)}
@@ -93,24 +89,31 @@ export default function App() {
                 onSave={updatePopup}
                 macrogames={macrogames}
             />
+            
             <MicrogameCustomizerModal
                 microgame={customizingMicrogame?.baseGame || null}
                 existingVariant={customizingMicrogame?.variant || null}
                 onClose={() => setCustomizingMicrogame(null)}
                 onSave={saveCustomMicrogame}
             />
+
             <header style={styles.header}>
                 <h1>Macrogame Admin Portal</h1>
-                <Nav currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                <Nav />
             </header>
+            
             <main style={styles.main}>
-                {currentPage.page === 'creator' && <MacrogameCreator setCurrentPage={setCurrentPage} onLaunchWizard={(data) => setWizardData(data)} flowFromWizard={flowFromWizard} onClearWizardFlow={() => setFlowFromWizard(null)} />}
-                {currentPage.page === 'manager' && <MacrogamesManager handleDeployMacrogame={handleDeployMacrogame} handleEditMacrogame={setEditingMacrogame} setCurrentPage={setCurrentPage} />}
-                {currentPage.page === 'delivery' && <DeliveryManager handleEditPopup={setEditingPopup} />}
-                {currentPage.page === 'campaigns' && <CampaignsManager />}
-                {currentPage.page === 'microgames' && <MicrogamesPage onCustomize={setCustomizingMicrogame} />}
-                {currentPage.page === 'conversions' && <ConversionsManagerPage />}
+                <Routes>
+                    <Route path="/" element={<Navigate to="/creator" replace />} />
+                    <Route path="/creator" element={<MacrogameCreator onLaunchWizard={(data) => setWizardData(data)} flowFromWizard={flowFromWizard} onClearWizardFlow={() => setFlowFromWizard(null)} />} />
+                    <Route path="/manager" element={<MacrogamesManager handleDeployMacrogame={handleDeployMacrogame} handleEditMacrogame={setEditingMacrogame} />} />
+                    <Route path="/delivery" element={<DeliveryManager handleEditPopup={setEditingPopup} />} />
+                    <Route path="/campaigns" element={<CampaignsManager />} />
+                    <Route path="/microgames" element={<MicrogamesPage onCustomize={setCustomizingMicrogame} />} />
+                    <Route path="/conversions" element={<ConversionsManagerPage />} />
+                </Routes>
             </main>
+            <Toaster position="bottom-center" />
         </div>
     );
 }

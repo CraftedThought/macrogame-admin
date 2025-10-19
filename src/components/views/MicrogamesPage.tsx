@@ -1,6 +1,7 @@
 // src/components/views/MicrogamesPage.tsx
 
 import React, { useState, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import { styles } from '../../App.styles';
 import { Microgame, CustomMicrogame, Popup } from '../../types';
 import { useData } from '../../hooks/useData';
@@ -73,21 +74,27 @@ export const MicrogamesPage: React.FC<MicrogamesPageProps> = ({ onCustomize }) =
 
     const handlePreview = (game: Microgame) => {
         const barebonesSkin = UI_SKINS.find(s => s.id === 'barebones');
-        if (!barebonesSkin) {
-            alert("Preview skin not found.");
-            return;
-        }
+        if (!barebonesSkin) { toast.error("Preview skin not found."); return; }
+
+        // Create a temporary macrogame object specifically for this preview
         const previewMacrogame: Omit<Macrogame, 'id' | 'type' | 'createdAt'> & { flow: any[] } = {
             name: `${game.name} - Preview`,
-            category: '',
+            category: 'All', // Category doesn't matter for single preview
             config: { titleScreenDuration: 1500, controlsScreenDuration: 2500, backgroundMusicUrl: null },
             introScreen: { enabled: false, text: '', duration: 0, clickToContinue: false },
             promoScreen: { enabled: false, text: '', duration: 0, clickToContinue: false },
-            flow: [{ ...game, customSkinData: {} }],
-            rewards: [],
+            flow: [{ ...game, customSkinData: {} }], // The flow is just this one game
+            conversionScreenId: null,
         };
-        const previewPopup: Partial<Popup> = { name: "Microgame Preview" };
-        const previewConfig = { popup: previewPopup, macrogame: previewMacrogame, rewards: [], skin: barebonesSkin, isPreviewMode: 'single_game' };
+
+        const previewConfig = { 
+            macrogameId: game.id, // Keep ID for potential logging
+            skinId: 'barebones', 
+            // Pass the fully constructed macrogame object
+            macrogame: previewMacrogame,
+            isPreviewMode: 'single_game'
+        };
+
         localStorage.setItem('macrogame_preview_data', JSON.stringify(previewConfig));
         window.open('/preview.html', '_blank');
     };
@@ -127,7 +134,7 @@ export const MicrogamesPage: React.FC<MicrogamesPageProps> = ({ onCustomize }) =
         if (baseGame) {
             onCustomize({ baseGame, variant });
         } else {
-            alert('Could not find the base microgame for this variant.');
+            toast.error('Could not find the base microgame for this variant.');
         }
     };
     

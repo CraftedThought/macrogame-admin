@@ -1,21 +1,26 @@
 // src/components/views/Nav.tsx
 
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { styles } from '../../App.styles';
-import { CurrentPage } from '../../types';
 
-interface NavProps {
-  currentPage: CurrentPage;
-  setCurrentPage: React.Dispatch<React.SetStateAction<CurrentPage>>;
-}
+export const Nav: React.FC = () => {
+    
+    // The NavLink component provides an `isActive` boolean to its children.
+    // We can use a function to dynamically apply our active style.
+    const getNavStyle = ({ isActive }: { isActive: boolean }) => 
+        isActive 
+            ? {...styles.navButton, ...styles.navButtonActive} 
+            : styles.navButton;
 
-export const Nav: React.FC<NavProps> = ({ currentPage, setCurrentPage }) => (
-    <nav style={styles.nav}>
-        <button onClick={() => setCurrentPage({ page: 'creator' })} style={currentPage.page === 'creator' ? {...styles.navButton, ...styles.navButtonActive} : styles.navButton}>Macrogame Creator</button>
-        <button onClick={() => setCurrentPage({ page: 'manager' })} style={currentPage.page === 'manager' ? {...styles.navButton, ...styles.navButtonActive} : styles.navButton}>Macrogames</button>
-        <button onClick={() => setCurrentPage({ page: 'delivery' })} style={currentPage.page === 'delivery' ? {...styles.navButton, ...styles.navButtonActive} : styles.navButton}>Delivery</button>
-        <button onClick={() => setCurrentPage({ page: 'campaigns' })} style={currentPage.page === 'campaigns' ? {...styles.navButton, ...styles.navButtonActive} : styles.navButton}>Campaigns</button>
-        <button onClick={() => setCurrentPage({ page: 'microgames' })} style={currentPage.page === 'microgames' ? {...styles.navButton, ...styles.navButtonActive} : styles.navButton}>Microgames</button>
-        <button onClick={() => setCurrentPage({ page: 'conversions' })} style={currentPage.page === 'conversions' ? {...styles.navButton, ...styles.navButtonActive} : styles.navButton}>Conversions</button>
-    </nav>
-);
+    return (
+        <nav style={styles.nav}>
+            <NavLink to="/creator" style={getNavStyle}>Macrogame Creator</NavLink>
+            <NavLink to="/manager" style={getNavStyle}>Macrogames</NavLink>
+            <NavLink to="/delivery" style={getNavStyle}>Delivery</NavLink>
+            <NavLink to="/campaigns" style={getNavStyle}>Campaigns</NavLink>
+            <NavLink to="/microgames" style={getNavStyle}>Microgames</NavLink>
+            <NavLink to="/conversions" style={getNavStyle}>Conversions</NavLink>
+        </nav>
+    );
+};

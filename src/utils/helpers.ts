@@ -76,3 +76,20 @@ export const adaptMicrogame = (microgame: Microgame, productCategory: string): M
   // If no specific rule applies, return the original game
   return microgame;
 };
+
+/**
+ * Preloads an array of image URLs.
+ * @param {string[]} urls The array of image URLs to preload.
+ * @returns {Promise<any[]>} A promise that resolves when all images have been loaded or errored.
+ */
+export const preloadImages = (urls: string[]): Promise<any[]> => {
+  const promises = urls.map(url => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = resolve;
+      img.onerror = resolve; // We resolve on error too, so one bad image doesn't stop the preview.
+      img.src = url;
+    });
+  });
+  return Promise.all(promises);
+};

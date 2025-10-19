@@ -1,6 +1,7 @@
 // src/components/views/CampaignsManager.tsx
 
 import React, { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { styles } from '../../App.styles';
 import { Campaign } from '../../types';
 import { useData } from '../../hooks/useData';
@@ -39,16 +40,16 @@ export const CampaignsManager: React.FC = () => {
         try {
             if (campaignId) {
                 await updateCampaign(campaignId, campaignData);
-                alert('Campaign updated successfully!');
+                toast.success('Campaign updated successfully!');
             } else {
                 await createCampaign(campaignData as Omit<Campaign, 'id'>);
-                alert('Campaign created successfully!');
+                toast.success('Campaign created successfully!');
             }
             setEditingCampaign(null);
             setIsCreateModalOpen(false);
         } catch (error) {
             console.error("Failed to save campaign:", error);
-            alert("There was an error saving the campaign. Please check the console.");
+            toast.error("There was an error saving the campaign.");
         }
     };
     

@@ -1,13 +1,14 @@
 // src/context/DataContext.tsx
 
 import { createContext, useState, useEffect, ReactNode } from 'react';
+import toast from 'react-hot-toast';
 import { db, storage } from '../firebase/config';
 import {
     collection, addDoc, onSnapshot, query, doc, updateDoc,
     deleteDoc, DocumentData, setDoc, writeBatch, getDocs, where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
-import { Macrogame, Microgame, Popup, ConversionMethod, CustomMicrogame, Campaign, ConversionScreen } from '../types';
+import { Macrogame, Microgame, Popup, ConversionMethod, CustomMicrogame, Campaign, ConversionScreen, EntityStatus } from '../types';
 import { seedMicrogames } from '../scripts/seedDatabase';
 
 // Helper function to generate a unique name for duplicated items
@@ -22,6 +23,34 @@ const generateUniqueName = (name: string, existingNames: Set<string>): string =>
     }
     return `${baseName} (${counter})`;
 };
+
+// --- NEW --- Confirmation Toast Component
+const ConfirmationToast: React.FC<{ t: any; message: string; onConfirm: () => void; }> = ({ t, message, onConfirm }) => (
+    <div style={{
+        background: '#333', color: 'white', padding: '12px 16px', borderRadius: '8px',
+        boxShadow: '0 3px 10px rgba(0, 0, 0, 0.2)', display: 'flex', alignItems: 'center', gap: '16px'
+    }}>
+        <span>{message}</span>
+        <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+                style={{ background: '#27ae60', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                onClick={() => {
+                    onConfirm();
+                    toast.dismiss(t.id);
+                }}
+            >
+                Confirm
+            </button>
+            <button
+                style={{ background: '#7f8c8d', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                onClick={() => toast.dismiss(t.id)}
+            >
+                Cancel
+            </button>
+        </div>
+    </div>
+);
+
 
 export interface DataContextType {
     macrogames: Macrogame[];
@@ -78,6 +107,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [allConversionScreens, setAllConversionScreens] = useState<ConversionScreen[]>([]);
     const [allMicrogames, setAllMicrogames] = useState<Microgame[]>([]);
     const [customMicrogames, setCustomMicrogames] = useState<CustomMicrogame[]>([]);
+
+    // --- NEW --- Reusable confirmation action
+    const confirmAction = (message: string, onConfirm: () => void) => {
+        toast.custom((t) => (
+            <ConfirmationToast t={t} message={message} onConfirm={onConfirm} />
+        ), { duration: 6000, position: 'top-center' }); // Auto-dismiss after 6s if no action
+    };
 
     useEffect(() => {
         (window as any).seedMicrogames = seedMicrogames;
@@ -136,7 +172,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await updateDoc(doc(db, 'campaigns', campaignId), { status });
     };
     const deleteCampaign = async (campaignId: string) => {
-        if (window.confirm("Are you sure? This will not delete the popups inside, but they will become unassigned.")) {
+        confirmAction("Delete campaign? Popups inside will become unassigned.", async () => {
             const batch = writeBatch(db);
             const popupsQuery = await getDocs(query(collection(db, 'popups'), where('campaignId', '==', campaignId)));
             popupsQuery.forEach(popupDoc => {
@@ -144,7 +180,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
             await batch.commit();
             await deleteDoc(doc(db, 'campaigns', campaignId));
-        }
+            toast.success('Campaign deleted.');
+        });
     };
     const duplicateCampaign = async (campaignToDuplicate: Campaign) => {
         const { id, name, ...rest } = campaignToDuplicate;
@@ -161,21 +198,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
     const updateMacrogame = async (updatedMacrogame: Omit<Macrogame, 'id' | 'type'> & { id: string | null }) => {
         if (!updatedMacrogame.id) return;
-
-        // --- OPTIMISTIC UPDATE ---
-        // Immediately update our local state with the new data.
-        setMacrogames(prevMacrogames =>
-            prevMacrogames.map(game =>
-                game.id === updatedMacrogame.id ? { ...game, ...updatedMacrogame } : game
-            )
-        );
-
-        // Then, send the update to Firestore to persist the change.
         const { id, ...gameData } = updatedMacrogame;
         await updateDoc(doc(db, "macrogames", id), gameData as DocumentData);
     };
     const deleteMacrogame = async (id: string) => {
-        if (window.confirm("Are you sure? This will also unlink this macrogame from any popups using it.")) {
+        confirmAction("Delete macrogame? It will be unlinked from any popups.", async () => {
             const batch = writeBatch(db);
             const popupsQuery = await getDocs(query(collection(db, 'popups'), where('macrogameId', '==', id)));
             popupsQuery.forEach(popupDoc => {
@@ -184,14 +211,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
             await batch.commit();
             await deleteDoc(doc(db, "macrogames", id));
-        }
+            toast.success('Macrogame deleted.');
+        });
     };
     const deleteMultipleMacrogames = async (ids: string[]) => {
-        if (window.confirm(`Are you sure you want to delete ${ids.length} macrogames? This cannot be undone.`)) {
+        if (ids.length === 0) return;
+        confirmAction(`Delete ${ids.length} macrogames? This cannot be undone.`, async () => {
             const batch = writeBatch(db);
             ids.forEach(id => batch.delete(doc(db, 'macrogames', id)));
             await batch.commit();
-        }
+            toast.success(`${ids.length} macrogames deleted.`);
+        });
     };
     const duplicateMacrogame = async (gameToDuplicate: Macrogame) => {
         const { id, name, ...restOfGame } = gameToDuplicate;
@@ -206,31 +236,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // --- Popup Functions ---
     const createPopup = async (newPopup: Omit<Popup, 'id'>) => {
-        const docRef = await addDoc(collection(db, 'popups'), newPopup);
-        // Optimistic Update
-        const finalNewPopup = { ...newPopup, id: docRef.id } as Popup;
-        setPopups(prevPopups => [...prevPopups, finalNewPopup]);
+        await addDoc(collection(db, 'popups'), newPopup);
     };
     const deletePopup = async (id: string) => {
-        if (window.confirm("Are you sure you want to delete this popup?")) {
-            await deleteDoc(doc(db, "popups", id));
-        }
+        await deleteDoc(doc(db, "popups", id));
     };
     const deleteMultiplePopups = async (ids: string[]) => {
-        if (window.confirm(`Are you sure you want to delete ${ids.length} popups? This cannot be undone.`)) {
-            const batch = writeBatch(db);
-            ids.forEach(id => batch.delete(doc(db, 'popups', id)));
-            await batch.commit();
-        }
+        if (ids.length === 0) return;
+        const batch = writeBatch(db);
+        ids.forEach(id => batch.delete(doc(db, 'popups', id)));
+        await batch.commit();
     };
     const updatePopup = async (popupId: string, dataToUpdate: Partial<Popup>) => {
-        // Optimistic Update
-        setPopups(prevPopups =>
-            prevPopups.map(p =>
-                p.id === popupId ? { ...p, ...dataToUpdate } : p
-            )
-        );
-        // Persist to Firestore
         await updateDoc(doc(db, "popups", popupId), dataToUpdate);
     };
     const duplicatePopup = async (popupToDuplicate: Popup) => {
@@ -268,10 +285,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             skinData,
         };
         await setDoc(doc(db, 'customMicrogames', variantId), variantData);
-        alert(`Custom microgame variant ${existingVariant ? 'updated' : 'saved'} successfully!`);
+        toast.success(`Custom microgame variant ${existingVariant ? 'updated' : 'saved'}!`);
     };
     const deleteCustomMicrogame = async (variantId: string) => {
-        if (window.confirm("Are you sure? This variant will be removed from all macrogames using it.")) {
+        confirmAction("Delete variant? It will be removed from all macrogames.", async () => {
             const batch = writeBatch(db);
             const macrogamesQuery = await getDocs(collection(db, 'macrogames'));
             macrogamesQuery.forEach(gameDoc => {
@@ -291,7 +308,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const storageFolderRef = ref(storage, `microgame-skins/${variantId}`);
             const files = await listAll(storageFolderRef);
             await Promise.all(files.items.map(fileRef => deleteObject(fileRef)));
-        }
+            toast.success('Variant deleted.');
+        });
     };
 
     // --- Conversion Method Functions ---
@@ -302,26 +320,52 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await updateDoc(doc(db, 'conversionMethods', methodId), updatedMethod);
     };
     const deleteConversionMethod = async (methodId: string) => {
-        if (window.confirm("Are you sure? This method will be removed from all conversion screens that use it.")) {
+        confirmAction("Delete method? It will be removed from all conversion screens.", async () => {
             const batch = writeBatch(db);
-            const screensQuery = await getDocs(query(collection(db, 'conversionScreens')));
-            screensQuery.forEach(screenDoc => {
+            const screensCollection = collection(db, 'conversionScreens');
+            const allScreensSnap = await getDocs(screensCollection);
+
+            allScreensSnap.forEach(screenDoc => {
                 const screen = screenDoc.data() as ConversionScreen;
-                if (screen.methodIds.includes(methodId)) {
-                    const newMethodIds = screen.methodIds.filter(id => id !== methodId);
-                    batch.update(screenDoc.ref, { methodIds: newMethodIds });
+                if (screen.methods?.some(m => m.methodId === methodId)) {
+                    const newMethods = screen.methods.filter(m => m.methodId !== methodId);
+                    const newStatus: EntityStatus = newMethods.length === 0 
+                        ? { code: 'error', message: 'This screen has no methods.' } 
+                        : { code: 'warning', message: 'A linked method was deleted.' };
+                    batch.update(screenDoc.ref, { methods: newMethods, status: newStatus });
                 }
             });
+            batch.delete(doc(db, 'conversionMethods', methodId));
             await batch.commit();
-            await deleteDoc(doc(db, 'conversionMethods', methodId));
-        }
+            toast.success('Conversion method deleted.');
+        });
     };
     const deleteMultipleConversionMethods = async (ids: string[]) => {
-        if (window.confirm(`Are you sure you want to delete ${ids.length} methods? This cannot be undone.`)) {
+        if (ids.length === 0) return;
+        confirmAction(`Delete ${ids.length} methods? They will be removed from all screens.`, async () => {
             const batch = writeBatch(db);
-            ids.forEach(id => batch.delete(doc(db, 'conversionMethods', id)));
+            const screensCollection = collection(db, 'conversionScreens');
+            const allScreensSnap = await getDocs(screensCollection);
+            const idsToDelete = new Set(ids);
+
+            allScreensSnap.forEach(screenDoc => {
+                const screen = screenDoc.data() as ConversionScreen;
+                let wasModified = false;
+                const newMethods = (screen.methods || []).filter(method => {
+                    if (idsToDelete.has(method.methodId)) { wasModified = true; return false; } return true;
+                });
+
+                if (wasModified) {
+                    const newStatus: EntityStatus = newMethods.length === 0
+                        ? { code: 'error', message: 'This screen has no methods.' }
+                        : { code: 'warning', message: 'Linked methods were deleted.' };
+                    batch.update(screenDoc.ref, { methods: newMethods, status: newStatus });
+                }
+            });
+            ids.forEach(id => { batch.delete(doc(db, 'conversionMethods', id)); });
             await batch.commit();
-        }
+            toast.success(`${ids.length} methods deleted.`);
+        });
     };
     const duplicateConversionMethod = async (methodToDuplicate: ConversionMethod) => {
         const { id, name, ...rest } = methodToDuplicate;
@@ -336,10 +380,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await addDoc(collection(db, 'conversionScreens'), newScreen);
     };
     const updateConversionScreen = async (screenId: string, updatedScreen: Partial<Omit<ConversionScreen, 'id'>>) => {
-        await updateDoc(doc(db, 'conversionScreens', screenId), updatedScreen);
+        const dataToUpdate = { ...updatedScreen };
+        if (dataToUpdate.methods && dataToUpdate.methods.length > 0) {
+            dataToUpdate.status = { code: 'ok', message: '' };
+        } else {
+            dataToUpdate.status = { code: 'error', message: 'This screen has no methods and will not function.' };
+        }
+        await updateDoc(doc(db, 'conversionScreens', screenId), dataToUpdate);
     };
     const deleteConversionScreen = async (screenId: string) => {
-        if (window.confirm("Are you sure? This screen will be unlinked from all macrogames that use it.")) {
+        confirmAction("Delete screen? It will be unlinked from all macrogames.", async () => {
             const batch = writeBatch(db);
             const macrogamesQuery = await getDocs(query(collection(db, 'macrogames'), where('conversionScreenId', '==', screenId)));
             macrogamesQuery.forEach(gameDoc => {
@@ -347,7 +397,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
             await batch.commit();
             await deleteDoc(doc(db, 'conversionScreens', screenId));
-        }
+            toast.success('Conversion screen deleted.');
+        });
     };
     const duplicateConversionScreen = async (screenToDuplicate: ConversionScreen) => {
         const { id, name, ...rest } = screenToDuplicate;
